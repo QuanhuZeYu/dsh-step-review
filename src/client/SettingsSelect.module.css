@@ -1,0 +1,4 @@
+.field { display: grid; gap: 6px; min-width: 0; }
+.trigger { width: 100%; max-width: none; justify-content: space-between; text-align: left; }
+.value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trigger > svg { flex-shrink: 0; }

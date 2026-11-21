@@ -1,0 +1,77 @@
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 28px;
+}
+
+.label {
+  min-width: 0;
+  color: var(--dsw-alias-label-primary);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.reset {
+  flex: none;
+}
+
+.hint {
+  overflow-wrap: anywhere;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.control {
+  --dsh-composer-model-icon-display: none;
+  --dsh-composer-model-text-display: block;
+  min-width: 0;
+  width: 100%;
+}
+
+/* 仅覆盖当前设置字段的原生触发器；菜单保留 portal 中的原生样式。 */
+.control[role='group'] button[aria-haspopup='menu'] {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: 36px;
+  gap: 8px;
+  padding: 0 12px;
+  border: 0.5px solid transparent;
+  border-radius: var(--dsw-radius-md);
+  box-shadow: inset 0 0 0 var(--dsh-hairline-width, 0.5px) var(--dsw-alias-border-l3);
+  background: var(--dsw-alias-bg-module-platform);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  text-align: left;
+}
+
+.control[role='group'] button[aria-haspopup='menu'] > span:first-of-type {
+  flex: 1 1 auto;
+}
+
+.control[role='group'] button[aria-haspopup='menu']:focus-visible:not([data-selection-focus]) {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 2px;
+}
+
+.control[role='group'] button[aria-haspopup='menu']:disabled {
+  color: var(--dsw-alias-label-dimmed);
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .control[role='group'] button[aria-haspopup='menu']:hover:not(:disabled) {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
+}
