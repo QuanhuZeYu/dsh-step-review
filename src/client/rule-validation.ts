@@ -21,6 +21,6 @@ export function ruleIssues(rule: Rule, settings: Pick<StepReviewSettings, 'enabl
       }
     }
   }
-  if (settings.enabled && rule.enabled && (!(rule.provider.trim() || settings.provider.trim()) || !(rule.model.trim() || settings.model.trim()))) issues.model = '选择完整的审查模型，或在默认设置中补齐模型。'
+  if (settings.enabled && rule.enabled && (!(rule.provider.trim() || settings.provider.trim()) || !(rule.model.trim() || settings.model.trim()))) issues.model = '选择完整的审查模型，或在默认设置中补齐 Provider 和 Model；preset 仅决定工具与权限。'
   return issues
 }

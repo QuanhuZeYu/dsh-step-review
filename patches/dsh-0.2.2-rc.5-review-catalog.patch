@@ -1,0 +1,1924 @@
+diff --git a/docs/persistence-catalog.i18n.yaml b/docs/persistence-catalog.i18n.yaml
+index f2294edff6..a9d0171dde 100644
+--- a/docs/persistence-catalog.i18n.yaml
++++ b/docs/persistence-catalog.i18n.yaml
+@@ -9,11 +9,11 @@
+   en: 1387c4505dde2faf
+   zh: 48570fa1c13d6910
+ /session-persistence-event-catalog/persistence-type-fingerprints:
+-  en: 35ffb6107a5fbae2
+-  zh: 06ce2128075e157b
++  en: 4e2b133a9c42a40e
++  zh: 1244f133f9a40a2a
+ /session-persistence-event-catalog/event-envelope:
+-  en: 189352d7a3bba620
+-  zh: 5361f42035034672
++  en: 05ffce91ba746658
++  zh: 225ee50db3e9532f
+ /session-persistence-event-catalog/events:
+   en: f4776ba3d0fd53ce
+   zh: e86769f50a69055a
+@@ -207,8 +207,11 @@
+   en: 9630752e97ddbfbc
+   zh: 9630752e97ddbfbc
+ /session-persistence-event-catalog/events/subagent/subagent-catalog-log-only:
+-  en: cc33ef2805abbfdd
+-  zh: d35696cb06672d6d
++  en: 0b9a313930f5a250
++  zh: 45cc60db1a5a80f8
++/session-persistence-event-catalog/events/subagent/subagent-catalog-category-log-only:
++  en: 7b30ed8724e519b4
++  zh: fbd649e80ee646e2
+ /session-persistence-event-catalog/events/subagent/subagent-descriptor-log-only:
+   en: f5d53639dc5afdfc
+   zh: 8c553e7397d08832
+@@ -792,8 +795,11 @@
+   en: 50f7e0fd99eeed4c
+   zh: 50f7e0fd99eeed4c
+ /session-persistence-event-catalog/resolved-persistence-types/subagent-catalog:
+-  en: 01d8ff1fa6b75417
+-  zh: 01d8ff1fa6b75417
++  en: 160f6fe7f03a59f4
++  zh: 160f6fe7f03a59f4
++/session-persistence-event-catalog/resolved-persistence-types/subagent-catalog-category:
++  en: 738672b4e4b02be8
++  zh: 738672b4e4b02be8
+ /session-persistence-event-catalog/resolved-persistence-types/subagent-descriptor:
+   en: e932f06c949f5f6c
+   zh: e932f06c949f5f6c
+@@ -1245,11 +1251,14 @@
+   en: ecc15ebadb77afdf
+   zh: 97ac27d6a4175f6f
+ /session-persistence-event-catalog/resolved-persistence-types/streamchunk:
+-  en: 747e384b3176e0cb
+-  zh: defbff408ea7c97c
++  en: 6cd51aa7e73e99aa
++  zh: 47bb69f567cf8106
++/session-persistence-event-catalog/resolved-persistence-types/subagentcatalogcategoryevent:
++  en: 9901cd1d5fae655b
++  zh: b0032d840ff999d7
+ /session-persistence-event-catalog/resolved-persistence-types/subagentcatalogevent:
+-  en: 8a56ae8e701509b3
+-  zh: caef4f0223f65470
++  en: 2aadcac307a691e1
++  zh: 231d5368a1860378
+ /session-persistence-event-catalog/resolved-persistence-types/subagentdescriptordata:
+   en: 2b9c68682eec6f78
+   zh: 8ef5e64326c1eae6
+@@ -2124,8 +2133,11 @@
+   en: 6ba6d118d44365e2
+   zh: 846ea149908f0e04
+ /session-persistence-event-catalog/resolved-persistence-types/type-subagent-catalog:
+-  en: b5dfa07e0b8d9f6a
+-  zh: e93efb23da447ade
++  en: 7a335c9781ddbf37
++  zh: 470add87b4ec22fd
++/session-persistence-event-catalog/resolved-persistence-types/type-subagent-catalog-category:
++  en: 51cc50cf6b6d3b6c
++  zh: c5be968f4b5a8be8
+ /session-persistence-event-catalog/resolved-persistence-types/type-subagent-descriptor:
+   en: 2adab4361a5b558d
+   zh: 7f2a8da669f9e117
+diff --git a/docs/persistence-catalog.md b/docs/persistence-catalog.md
+index 33d9aa4395..317a19c478 100644
+--- a/docs/persistence-catalog.md
++++ b/docs/persistence-catalog.md
+@@ -62,6 +62,7 @@ The [format references](persistence-changes/historical-formats/README.md) cover
+ | `event:step/end` | event | `e0a787e6ec76c7c94fecbc501b489164ab0293db05bc947914077ad01e674f05` | [`{ type: "step/end" }`](#persistence-type-sha256-e0a787e6ec76c7c94fecbc501b489164ab0293db05bc947914077ad01e674f05) |
+ | `event:step/start` | event | `4513e088d43e6c68425be30451b9f961cc264fe7318ca62681c41d4d78615986` | [`{ type: "step/start" }`](#persistence-type-sha256-4513e088d43e6c68425be30451b9f961cc264fe7318ca62681c41d4d78615986) |
+ | `event:subagent/catalog` | event | `d49164d37eab0f0f70fa787c65d887abbea869c010ccb103d717fab3519c3a41` | [`{ type: "subagent/catalog" }`](#persistence-type-sha256-d49164d37eab0f0f70fa787c65d887abbea869c010ccb103d717fab3519c3a41) |
++| `event:subagent/catalog-category` | event | `42094b7fc1755ed807913964de65b0e257182725787600b85cf7809f4d188d5a` | [`{ type: "subagent/catalog-category" }`](#persistence-type-sha256-42094b7fc1755ed807913964de65b0e257182725787600b85cf7809f4d188d5a) |
+ | `event:subagent/descriptor` | event | `b79ada42962cad0190a9d465805260567621fa3a4abd757eb31e6016b52d5ab5` | [`{ type: "subagent/descriptor" }`](#persistence-type-sha256-b79ada42962cad0190a9d465805260567621fa3a4abd757eb31e6016b52d5ab5) |
+ | `event:subagent/model-selection-policy` | event | `a6567ccb2e530606b775371eb4fa31468d72084339968e8b0440a516a23b39dc` | [`{ type: "subagent/model-selection-policy" }`](#persistence-type-sha256-a6567ccb2e530606b775371eb4fa31468d72084339968e8b0440a516a23b39dc) |
+ | `event:system/message` | event | `69081694be231d56fd9580ba14645fd5e35373202605d5c5c841a9435b5fa3b1` | [`{ type: "system/message" }`](#persistence-type-sha256-69081694be231d56fd9580ba14645fd5e35373202605d5c5c841a9435b5fa3b1) |
+@@ -161,7 +162,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
+ }[T]
+ ```
+ 
+-Sources: [`packages/core/session/src/types.ts:439`](../packages/core/session/src/types.ts) · [`packages/core/session/src/types.ts:447`](../packages/core/session/src/types.ts) · [`packages/core/session/src/types.ts:470`](../packages/core/session/src/types.ts) · [`packages/core/session/src/types.ts:506`](../packages/core/session/src/types.ts)
++Sources: [`packages/core/session/src/types.ts:439`](../packages/core/session/src/types.ts) · [`packages/core/session/src/types.ts:447`](../packages/core/session/src/types.ts) · [`packages/core/session/src/types.ts:470`](../packages/core/session/src/types.ts) · [`packages/core/session/src/types.ts:517`](../packages/core/session/src/types.ts)
+ 
+ ## Events
+ 
+@@ -938,7 +939,21 @@ Source: [`packages/core/session/src/types.ts:305`](../packages/core/session/src/
+ 'subagent/catalog': SubagentCatalogEvent
+ ```
+ 
+-Source: [`packages/subagent/subagent/src/catalog.ts:52`](../packages/subagent/subagent/src/catalog.ts)
++Source: [`packages/subagent/subagent/src/catalog.ts:60`](../packages/subagent/subagent/src/catalog.ts)
++
++<a id="subagentcatalog-category--log-only"></a>
++
++#### `subagent/catalog-category` — log-only
++
++```ts persistence-catalog
++/**
++ * 直接目录成员的发现与展示分类，不改变名称、成员关系或权限。
++ * @param data - 带版本的分类信息；以 ignorable: true 写入。
++ */
++'subagent/catalog-category': SubagentCatalogCategoryEvent
++```
++
++Source: [`packages/subagent/subagent/src/catalog.ts:65`](../packages/subagent/subagent/src/catalog.ts)
+ 
+ <a id="subagentdescriptor--log-only"></a>
+ 
+@@ -2646,6 +2661,14 @@ SHA-256: `44c8c77aa9aa100b0d74d2deee85474b29faa6eee0ac0f662f7abe9931ddd7f2`
+ 
+ `"subagent/catalog"`
+ 
++<a id="persistence-type-sha256-5305d4bfbc692b02774810075869b2da58452b146758a0dbb5c0b95e13dcd4cb"></a>
++
++### `"subagent/catalog-category"`
++
++SHA-256: `5305d4bfbc692b02774810075869b2da58452b146758a0dbb5c0b95e13dcd4cb`
++
++`"subagent/catalog-category"`
++
+ <a id="persistence-type-sha256-5ebce1317eacd2c148456627a09668e927ee15c204f0643f5ea76b46b54a2647"></a>
+ 
+ ### `"subagent/descriptor"`
+@@ -4890,6 +4913,24 @@ One of:
+ - [`{ type: "finish" }`](#persistence-type-sha256-a2b49331716ba0a7078b026d145306a70eae64b7313c3e6204bd931e75ec3bb1)
+ - [`{ type: "usage" }`](#persistence-type-sha256-f1a96afe7503ac1817de769cd0ba13d9b80111c7034c50106b3344ecc14cc515)
+ 
++<a id="persistence-type-sha256-40c6827ff94f2c1e398ea8fe6e56b8a63e553fffaf52497c3d301e7ec27e7f3e"></a>
++
++<a id="persistence-type-packagessubagentsubagentsrccatalogtssubagentcatalogcategoryevent"></a>
++
++<a id="persistence-type-subagentcatalogcategoryevent"></a>
++
++### `SubagentCatalogCategoryEvent`
++
++SHA-256: `40c6827ff94f2c1e398ea8fe6e56b8a63e553fffaf52497c3d301e7ec27e7f3e`
++
++Sources: [`packages/subagent/subagent/src/catalog.ts:48`](../packages/subagent/subagent/src/catalog.ts)
++
++| Property | Presence | Type |
++|---|---|---|
++| `category` | required | `string` |
++| `childId` | required | `string` |
++| `version` | required | `0` |
++
+ <a id="persistence-type-sha256-058fc9a6b4fbd5d43437c3a64170002070dfc98e18d87de294b564ae446ca8ae"></a>
+ 
+ <a id="persistence-type-packagessubagentsubagentsrccatalogtssubagentcatalogevent"></a>
+@@ -4900,7 +4941,7 @@ One of:
+ 
+ SHA-256: `058fc9a6b4fbd5d43437c3a64170002070dfc98e18d87de294b564ae446ca8ae`
+ 
+-Sources: [`packages/subagent/subagent/src/catalog.ts:32`](../packages/subagent/subagent/src/catalog.ts)
++Sources: [`packages/subagent/subagent/src/catalog.ts:33`](../packages/subagent/subagent/src/catalog.ts)
+ 
+ One of:
+ 
+@@ -8938,6 +8979,22 @@ SHA-256: `d49164d37eab0f0f70fa787c65d887abbea869c010ccb103d717fab3519c3a41`
+ | `time` | required | `number` |
+ | `type` | required | `"subagent/catalog"` |
+ 
++<a id="persistence-type-sha256-42094b7fc1755ed807913964de65b0e257182725787600b85cf7809f4d188d5a"></a>
++
++<a id="persistence-type-eventsubagentcatalog-category"></a>
++
++### `{ type: "subagent/catalog-category" }`
++
++SHA-256: `42094b7fc1755ed807913964de65b0e257182725787600b85cf7809f4d188d5a`
++
++| Property | Presence | Type |
++|---|---|---|
++| `data` | required | [`SubagentCatalogCategoryEvent`](#persistence-type-sha256-40c6827ff94f2c1e398ea8fe6e56b8a63e553fffaf52497c3d301e7ec27e7f3e) |
++| `ignorable` | optional | `true` |
++| `seq` | required | `number` |
++| `time` | required | `number` |
++| `type` | required | `"subagent/catalog-category"` |
++
+ <a id="persistence-type-sha256-b79ada42962cad0190a9d465805260567621fa3a4abd757eb31e6016b52d5ab5"></a>
+ 
+ <a id="persistence-type-eventsubagentdescriptor"></a>
+diff --git a/docs/persistence-catalog.zh.md b/docs/persistence-catalog.zh.md
+index 5047ebc659..dd43cae50f 100644
+--- a/docs/persistence-catalog.zh.md
++++ b/docs/persistence-catalog.zh.md
+@@ -64,6 +64,7 @@
+ | `event:step/end` | event | `e0a787e6ec76c7c94fecbc501b489164ab0293db05bc947914077ad01e674f05` | [`{ type: "step/end" }`](#persistence-type-sha256-e0a787e6ec76c7c94fecbc501b489164ab0293db05bc947914077ad01e674f05) |
+ | `event:step/start` | event | `4513e088d43e6c68425be30451b9f961cc264fe7318ca62681c41d4d78615986` | [`{ type: "step/start" }`](#persistence-type-sha256-4513e088d43e6c68425be30451b9f961cc264fe7318ca62681c41d4d78615986) |
+ | `event:subagent/catalog` | event | `d49164d37eab0f0f70fa787c65d887abbea869c010ccb103d717fab3519c3a41` | [`{ type: "subagent/catalog" }`](#persistence-type-sha256-d49164d37eab0f0f70fa787c65d887abbea869c010ccb103d717fab3519c3a41) |
++| `event:subagent/catalog-category` | event | `42094b7fc1755ed807913964de65b0e257182725787600b85cf7809f4d188d5a` | [`{ type: "subagent/catalog-category" }`](#persistence-type-sha256-42094b7fc1755ed807913964de65b0e257182725787600b85cf7809f4d188d5a) |
+ | `event:subagent/descriptor` | event | `b79ada42962cad0190a9d465805260567621fa3a4abd757eb31e6016b52d5ab5` | [`{ type: "subagent/descriptor" }`](#persistence-type-sha256-b79ada42962cad0190a9d465805260567621fa3a4abd757eb31e6016b52d5ab5) |
+ | `event:subagent/model-selection-policy` | event | `a6567ccb2e530606b775371eb4fa31468d72084339968e8b0440a516a23b39dc` | [`{ type: "subagent/model-selection-policy" }`](#persistence-type-sha256-a6567ccb2e530606b775371eb4fa31468d72084339968e8b0440a516a23b39dc) |
+ | `event:system/message` | event | `69081694be231d56fd9580ba14645fd5e35373202605d5c5c841a9435b5fa3b1` | [`{ type: "system/message" }`](#persistence-type-sha256-69081694be231d56fd9580ba14645fd5e35373202605d5c5c841a9435b5fa3b1) |
+@@ -163,7 +164,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
+ }[T]
+ ```
+ 
+-来源：[`packages/core/session/src/types.ts:439`](../packages/core/session/src/types.ts) · [`packages/core/session/src/types.ts:447`](../packages/core/session/src/types.ts) · [`packages/core/session/src/types.ts:470`](../packages/core/session/src/types.ts) · [`packages/core/session/src/types.ts:506`](../packages/core/session/src/types.ts)
++来源：[`packages/core/session/src/types.ts:439`](../packages/core/session/src/types.ts) · [`packages/core/session/src/types.ts:447`](../packages/core/session/src/types.ts) · [`packages/core/session/src/types.ts:470`](../packages/core/session/src/types.ts) · [`packages/core/session/src/types.ts:517`](../packages/core/session/src/types.ts)
+ 
+ ## 事件
+ 
+@@ -940,7 +941,21 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
+ 'subagent/catalog': SubagentCatalogEvent
+ ```
+ 
+-来源：[`packages/subagent/subagent/src/catalog.ts:52`](../packages/subagent/subagent/src/catalog.ts)
++来源：[`packages/subagent/subagent/src/catalog.ts:60`](../packages/subagent/subagent/src/catalog.ts)
++
++<a id="subagentcatalog-category--log-only"></a>
++
++#### `subagent/catalog-category` — log-only
++
++```ts persistence-catalog
++/**
++ * 直接目录成员的发现与展示分类，不改变名称、成员关系或权限。
++ * @param data - 带版本的分类信息；以 ignorable: true 写入。
++ */
++'subagent/catalog-category': SubagentCatalogCategoryEvent
++```
++
++来源：[`packages/subagent/subagent/src/catalog.ts:65`](../packages/subagent/subagent/src/catalog.ts)
+ 
+ <a id="subagentdescriptor--log-only"></a>
+ 
+@@ -2648,6 +2663,14 @@ SHA-256: `44c8c77aa9aa100b0d74d2deee85474b29faa6eee0ac0f662f7abe9931ddd7f2`
+ 
+ `"subagent/catalog"`
+ 
++<a id="persistence-type-sha256-5305d4bfbc692b02774810075869b2da58452b146758a0dbb5c0b95e13dcd4cb"></a>
++
++### `"subagent/catalog-category"`
++
++SHA-256: `5305d4bfbc692b02774810075869b2da58452b146758a0dbb5c0b95e13dcd4cb`
++
++`"subagent/catalog-category"`
++
+ <a id="persistence-type-sha256-5ebce1317eacd2c148456627a09668e927ee15c204f0643f5ea76b46b54a2647"></a>
+ 
+ ### `"subagent/descriptor"`
+@@ -4892,6 +4915,24 @@ SHA-256: `47e9095591ae36e7c39ee62553097772f2bfa16304536a72dbbc3f691f605180`
+ - [`{ type: "finish" }`](#persistence-type-sha256-a2b49331716ba0a7078b026d145306a70eae64b7313c3e6204bd931e75ec3bb1)
+ - [`{ type: "usage" }`](#persistence-type-sha256-f1a96afe7503ac1817de769cd0ba13d9b80111c7034c50106b3344ecc14cc515)
+ 
++<a id="persistence-type-sha256-40c6827ff94f2c1e398ea8fe6e56b8a63e553fffaf52497c3d301e7ec27e7f3e"></a>
++
++<a id="persistence-type-packagessubagentsubagentsrccatalogtssubagentcatalogcategoryevent"></a>
++
++<a id="persistence-type-subagentcatalogcategoryevent"></a>
++
++### `SubagentCatalogCategoryEvent`
++
++SHA-256: `40c6827ff94f2c1e398ea8fe6e56b8a63e553fffaf52497c3d301e7ec27e7f3e`
++
++来源：[`packages/subagent/subagent/src/catalog.ts:48`](../packages/subagent/subagent/src/catalog.ts)
++
++| 属性 | 存在性 | 类型 |
++|---|---|---|
++| `category` | 必需 | `string` |
++| `childId` | 必需 | `string` |
++| `version` | 必需 | `0` |
++
+ <a id="persistence-type-sha256-058fc9a6b4fbd5d43437c3a64170002070dfc98e18d87de294b564ae446ca8ae"></a>
+ 
+ <a id="persistence-type-packagessubagentsubagentsrccatalogtssubagentcatalogevent"></a>
+@@ -4902,7 +4943,7 @@ SHA-256: `47e9095591ae36e7c39ee62553097772f2bfa16304536a72dbbc3f691f605180`
+ 
+ SHA-256: `058fc9a6b4fbd5d43437c3a64170002070dfc98e18d87de294b564ae446ca8ae`
+ 
+-来源：[`packages/subagent/subagent/src/catalog.ts:32`](../packages/subagent/subagent/src/catalog.ts)
++来源：[`packages/subagent/subagent/src/catalog.ts:33`](../packages/subagent/subagent/src/catalog.ts)
+ 
+ 以下类型之一：
+ 
+@@ -8940,6 +8981,22 @@ SHA-256: `d49164d37eab0f0f70fa787c65d887abbea869c010ccb103d717fab3519c3a41`
+ | `time` | 必需 | `number` |
+ | `type` | 必需 | `"subagent/catalog"` |
+ 
++<a id="persistence-type-sha256-42094b7fc1755ed807913964de65b0e257182725787600b85cf7809f4d188d5a"></a>
++
++<a id="persistence-type-eventsubagentcatalog-category"></a>
++
++### `{ type: "subagent/catalog-category" }`
++
++SHA-256: `42094b7fc1755ed807913964de65b0e257182725787600b85cf7809f4d188d5a`
++
++| 属性 | 存在性 | 类型 |
++|---|---|---|
++| `data` | 必需 | [`SubagentCatalogCategoryEvent`](#persistence-type-sha256-40c6827ff94f2c1e398ea8fe6e56b8a63e553fffaf52497c3d301e7ec27e7f3e) |
++| `ignorable` | 可选 | `true` |
++| `seq` | 必需 | `number` |
++| `time` | 必需 | `number` |
++| `type` | 必需 | `"subagent/catalog-category"` |
++
+ <a id="persistence-type-sha256-b79ada42962cad0190a9d465805260567621fa3a4abd757eb31e6016b52d5ab5"></a>
+ 
+ <a id="persistence-type-eventsubagentdescriptor"></a>
+diff --git a/docs/persistence-changes/2026-11-22-subagent-catalog-category.i18n.yaml b/docs/persistence-changes/2026-11-22-subagent-catalog-category.i18n.yaml
+new file mode 100644
+index 0000000000..7775a2151d
+--- /dev/null
++++ b/docs/persistence-changes/2026-11-22-subagent-catalog-category.i18n.yaml
+@@ -0,0 +1,28 @@
++# Bilingual-pair consistency record for 2026-11-22-subagent-catalog-category.md (docs/i18n/README.md): per heading
++# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
++# After editing either side, bring the other along and re-record with:
++#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-11-22-subagent-catalog-category.md
++/:
++  en: 3d5a424ae7d7e46b
++  zh: c22a8e4a62d8cc1a
++/2026-11-22-subagent-catalog-category:
++  en: 4432fd5bd941bd73
++  zh: a58e0b55647d571d
++/2026-11-22-subagent-catalog-category/summary:
++  en: fdfca6564401043a
++  zh: c7435312b072cd3d
++/2026-11-22-subagent-catalog-category/table-of-contents:
++  en: 6cf314a069ceb451
++  zh: 9adff678e9ecab3b
++/2026-11-22-subagent-catalog-category/declaration:
++  en: 6907136f28e48c90
++  zh: 02f8298485f3d8e7
++/2026-11-22-subagent-catalog-category/compatibility:
++  en: f501c02e1d594c04
++  zh: cf350663b683a881
++/2026-11-22-subagent-catalog-category/verification:
++  en: b5d569433aedfb2d
++  zh: cb51a6da7b69b6f4
++/2026-11-22-subagent-catalog-category/dev-note:
++  en: b75c8458928b72b9
++  zh: 003ba4e17b4b5269
+diff --git a/docs/persistence-changes/2026-11-22-subagent-catalog-category.md b/docs/persistence-changes/2026-11-22-subagent-catalog-category.md
+new file mode 100644
+index 0000000000..f30cffe4a4
+--- /dev/null
++++ b/docs/persistence-changes/2026-11-22-subagent-catalog-category.md
+@@ -0,0 +1,48 @@
++---
++description: "Records a persistence type transition and its compatibility acknowledgement."
++kind: persistence-change
++---
++
++# 2026-11-22-subagent-catalog-category
++
++English | [中文](2026-11-22-subagent-catalog-category.zh.md)
++
++## Summary
++
++增加正式目录分类信息事件 subagent/catalog-category，载荷 version:0、childId、category；以 ignorable:true 固化到事件 envelope。
++
++## Table of Contents
++
++- [Declaration](#declaration)
++- [Compatibility](#compatibility)
++- [Verification](#verification)
++- [Dev Note](#dev-note)
++
++<a id="declaration"></a>
++## Declaration
++
++```yaml persistence-change
++schemaVersion: 1
++id: 2026-11-22-subagent-catalog-category
++baseline: false
++changes:
++  - root: "event:subagent/catalog-category"
++    previous: null
++    after: "42094b7fc1755ed807913964de65b0e257182725787600b85cf7809f4d188d5a"
++    decision: same-version
++```
++
++<a id="compatibility"></a>
++## Compatibility
++
++已有 subagent/catalog v3 载荷、descriptor 与 SessionHeader 保持原格式。新读者读取无分类的历史目录为 work，并按父会话自有的最新分类事实投影；fork inherited prefix 不参与分类。旧读者依据既有 ignorable:true 规则安全跳过未知分类信息，保留原目录、名称与生命周期。分类不参与权限判断或模型历史重建。目录投影缓存升级 stateVersion 7；版本6缓存失效后从日志重放。
++
++<a id="verification"></a>
++## Verification
++
++三个授权运行包源码 noEmit（vendor 使用既有 lib/types 声明）diagnostics=0。已有408项回归中406通过；两项旧断言分别固定缓存版本6和完整树工具描述，按用户要求保留原测试。自清理原生 Loader/cordis.yml 探针已验证本地创建、首次发布即 review 分类、完整 review→helper 与 worker 子树；后续检查在工具格式化文本的 JSON 解析处终止。最终新lib分类与持久重放验收由主流程独立跟踪。
++
++<a id="dev-note"></a>
++## Dev Note
++
++None.
+diff --git a/docs/persistence-changes/2026-11-22-subagent-catalog-category.schema.json b/docs/persistence-changes/2026-11-22-subagent-catalog-category.schema.json
+new file mode 100644
+index 0000000000..248e02d8ad
+--- /dev/null
++++ b/docs/persistence-changes/2026-11-22-subagent-catalog-category.schema.json
+@@ -0,0 +1,16 @@
++{
++  "formatVersion": 2,
++  "roots": [
++    {"key":"event:subagent/catalog-category","kind":"event","event":"subagent/catalog-category","surface":false,"digest":"42094b7fc1755ed807913964de65b0e257182725787600b85cf7809f4d188d5a"}
++  ],
++  "types": [],
++  "nodes": {
++    "0657d3ca5ac4e7bf": {"kind":"primitive","type":"number"},
++    "40c6827ff94f2c1e": {"kind":"object","properties":[{"name":"category","type":"4cd48f3e5108bd6e","optional":false},{"name":"childId","type":"4cd48f3e5108bd6e","optional":false},{"name":"version","type":"93d38436347f67c9","optional":false}],"indices":[]},
++    "42094b7fc1755ed8": {"kind":"object","properties":[{"name":"data","type":"40c6827ff94f2c1e","optional":false},{"name":"ignorable","type":"dacf3d5f3e4ff619","optional":true},{"name":"seq","type":"0657d3ca5ac4e7bf","optional":false},{"name":"time","type":"0657d3ca5ac4e7bf","optional":false},{"name":"type","type":"5305d4bfbc692b02","optional":false}],"indices":[]},
++    "4cd48f3e5108bd6e": {"kind":"primitive","type":"string"},
++    "5305d4bfbc692b02": {"kind":"literal","value":"subagent/catalog-category"},
++    "93d38436347f67c9": {"kind":"literal","value":0},
++    "dacf3d5f3e4ff619": {"kind":"literal","value":true}
++  }
++}
+diff --git a/docs/persistence-changes/2026-11-22-subagent-catalog-category.zh.md b/docs/persistence-changes/2026-11-22-subagent-catalog-category.zh.md
+new file mode 100644
+index 0000000000..fbffbfa4e7
+--- /dev/null
++++ b/docs/persistence-changes/2026-11-22-subagent-catalog-category.zh.md
+@@ -0,0 +1,48 @@
++---
++description: "记录持久化类型更改及其兼容性确认。"
++kind: persistence-change
++---
++
++# 2026-11-22-subagent-catalog-category
++
++[English](2026-11-22-subagent-catalog-category.md) | 中文
++
++## 概述
++
++增加正式目录分类信息事件 subagent/catalog-category，载荷 version:0、childId、category；以 ignorable:true 固化到事件 envelope。
++
++## 目录
++
++- [声明](#declaration)
++- [兼容性](#compatibility)
++- [验证](#verification)
++- [开发备注](#dev-note)
++
++<a id="declaration"></a>
++## 声明
++
++```yaml persistence-change
++schemaVersion: 1
++id: 2026-11-22-subagent-catalog-category
++baseline: false
++changes:
++  - root: "event:subagent/catalog-category"
++    previous: null
++    after: "42094b7fc1755ed807913964de65b0e257182725787600b85cf7809f4d188d5a"
++    decision: same-version
++```
++
++<a id="compatibility"></a>
++## 兼容性
++
++已有 subagent/catalog v3 载荷、descriptor 与 SessionHeader 保持原格式。新读者读取无分类的历史目录为 work，并按父会话自有的最新分类事实投影；fork inherited prefix 不参与分类。旧读者依据既有 ignorable:true 规则安全跳过未知分类信息，保留原目录、名称与生命周期。分类不参与权限判断或模型历史重建。目录投影缓存升级 stateVersion 7；版本6缓存失效后从日志重放。
++
++<a id="verification"></a>
++## 验证
++
++三个授权运行包源码 noEmit（vendor 使用既有 lib/types 声明）diagnostics=0。已有408项回归中406通过；两项旧断言分别固定缓存版本6和完整树工具描述，按用户要求保留原测试。自清理原生 Loader/cordis.yml 探针已验证本地创建、首次发布即 review 分类、完整 review→helper 与 worker 子树；后续检查在工具格式化文本的 JSON 解析处终止。最终新lib分类与持久重放验收由主流程独立跟踪。
++
++<a id="dev-note"></a>
++## 开发备注
++
++无。
+diff --git a/docs/persistence-schema.json b/docs/persistence-schema.json
+index a2832eb98c..2333583b86 100644
+--- a/docs/persistence-schema.json
++++ b/docs/persistence-schema.json
+@@ -44,6 +44,7 @@
+     {"key":"event:step/end","kind":"event","event":"step/end","surface":false,"digest":"e0a787e6ec76c7c94fecbc501b489164ab0293db05bc947914077ad01e674f05"},
+     {"key":"event:step/start","kind":"event","event":"step/start","surface":false,"digest":"4513e088d43e6c68425be30451b9f961cc264fe7318ca62681c41d4d78615986"},
+     {"key":"event:subagent/catalog","kind":"event","event":"subagent/catalog","surface":false,"digest":"d49164d37eab0f0f70fa787c65d887abbea869c010ccb103d717fab3519c3a41"},
++    {"key":"event:subagent/catalog-category","kind":"event","event":"subagent/catalog-category","surface":false,"digest":"42094b7fc1755ed807913964de65b0e257182725787600b85cf7809f4d188d5a"},
+     {"key":"event:subagent/descriptor","kind":"event","event":"subagent/descriptor","surface":false,"digest":"b79ada42962cad0190a9d465805260567621fa3a4abd757eb31e6016b52d5ab5"},
+     {"key":"event:subagent/model-selection-policy","kind":"event","event":"subagent/model-selection-policy","surface":false,"digest":"a6567ccb2e530606b775371eb4fa31468d72084339968e8b0440a516a23b39dc"},
+     {"key":"event:system/message","kind":"event","event":"system/message","surface":true,"digest":"69081694be231d56fd9580ba14645fd5e35373202605d5c5c841a9435b5fa3b1"},
+@@ -76,7 +77,7 @@
+     {"digest":"02b2c23f2d94b028c9588a8faace3fce1217405db346da3389368b495457bf79","names":[],"sources":["packages/extensions/cordis-host-runner/src/index.ts:14"]},
+     {"digest":"0341d4c3dfcd53253cdc1e789d9130d3cd848b6f8b0706bf92f313a68b39ff23","names":[],"sources":[]},
+     {"digest":"05205074b24d8340cfd7995f6cb64779c7f1241490954700115601e264178877","names":[],"sources":[]},
+-    {"digest":"058fc9a6b4fbd5d43437c3a64170002070dfc98e18d87de294b564ae446ca8ae","names":["packages/subagent/subagent/src/catalog.ts#SubagentCatalogEvent"],"sources":["packages/subagent/subagent/src/catalog.ts:32"]},
++    {"digest":"058fc9a6b4fbd5d43437c3a64170002070dfc98e18d87de294b564ae446ca8ae","names":["packages/subagent/subagent/src/catalog.ts#SubagentCatalogEvent"],"sources":["packages/subagent/subagent/src/catalog.ts:33"]},
+     {"digest":"05a2796621b1ee6c03ef7abe560b25116bb4da4d592312117242a78415a32b04","names":[],"sources":[]},
+     {"digest":"05d2ae1e0c7f8770f83f9a09047afb39a335d8ac986df3193659aa1e581472cf","names":["packages/interaction/user-approval/src/index.ts#ApprovalPolicy"],"sources":["packages/interaction/user-approval/src/index.ts:68"]},
+     {"digest":"0657d3ca5ac4e7bf79b00bcf860b1c7159d01a9da137497221ec2f1776e365f7","names":["packages/core/session/src/types.ts#SessionSeq"],"sources":["packages/core/session/src/types.ts:33"]},
+@@ -233,7 +234,9 @@
+     {"digest":"3fdf9582c3b5597df104d32d97dab6c6ee3a93794f3034ec6ada6272404ea27f","names":["packages/schedule/schedule/src/types.ts#LegacyAfterScheduleRecord"],"sources":["packages/schedule/schedule/src/types.ts:161"]},
+     {"digest":"4018a00144474b6c60dc1aa6e5c1f03611c66bd739833779a7d20a511df6d082","names":["packages/team/agent-team/src/types.ts#TeamTaskSnapshot"],"sources":["packages/team/agent-team/src/types.ts:64"]},
+     {"digest":"408927267422a7b2beb6df354ff7c1406d929a5646554f48adf85eb8372f811c","names":[],"sources":[]},
++    {"digest":"40c6827ff94f2c1e398ea8fe6e56b8a63e553fffaf52497c3d301e7ec27e7f3e","names":["packages/subagent/subagent/src/catalog.ts#SubagentCatalogCategoryEvent"],"sources":["packages/subagent/subagent/src/catalog.ts:48"]},
+     {"digest":"4208123b50df5006b181481ab45fcf1cde807b88d3fd4d340090bc2e202fac41","names":[],"sources":[]},
++    {"digest":"42094b7fc1755ed807913964de65b0e257182725787600b85cf7809f4d188d5a","names":[],"sources":[]},
+     {"digest":"42e0916e0dda5f6d1e7bb05d8514717147c036a79c9f36085683469516c1fd3f","names":[],"sources":[]},
+     {"digest":"42e2ff61928fb7dfaf0f057d61686f3a32ff713da419d12d4f250efc96733fe0","names":[],"sources":[]},
+     {"digest":"4312134fc6f9cad507c31390bd3d147535492dd77621ec517c5e85f853d53a03","names":[],"sources":[]},
+@@ -277,6 +280,7 @@
+     {"digest":"529e0ccd0e34079ab4ff21ed87f810cee0388246263bf22e8aba5986b56fae05","names":[],"sources":["packages/util/values/src/index.ts:4"]},
+     {"digest":"52c6113cb0e53f345324bf84f01928bea5d5df57ee80bc0dd65407b8bc5a3734","names":[],"sources":[]},
+     {"digest":"5302e763151277614b97e77f00e3b326694c6c1247b916a20503c344dc970777","names":[],"sources":["packages/core/session/src/types.ts:383"]},
++    {"digest":"5305d4bfbc692b02774810075869b2da58452b146758a0dbb5c0b95e13dcd4cb","names":[],"sources":[]},
+     {"digest":"530da6c0267813bb4511af72883cc518834e624e3b3220a7062955fd57a788a6","names":["packages/core/session/src/types.ts#RequestHeaderReason"],"sources":["packages/core/session/src/types.ts:279"]},
+     {"digest":"53cf1704ae0709c7678bcf070c83c619fc48ca1b5c173b74cfa8702f22a8e492","names":[],"sources":[]},
+     {"digest":"54f9276a1617d7c12594722c89cfe864bcbe4517e9a6f9c98bab14f199a135e0","names":[],"sources":["packages/core/session/src/types.ts:363"]},
+@@ -871,7 +875,9 @@
+     "3fdf9582c3b5597d": {"kind":"object","properties":[{"name":"afterSeconds","type":"0657d3ca5ac4e7bf","optional":false},{"name":"id","type":"4cd48f3e5108bd6e","optional":false},{"name":"kind","type":"5b232a9b9bfcc0fc","optional":false},{"name":"prompt","type":"4cd48f3e5108bd6e","optional":false},{"name":"scheduledAt","type":"4cd48f3e5108bd6e","optional":false},{"name":"title","type":"4cd48f3e5108bd6e","optional":true}],"indices":[]},
+     "4018a00144474b6c": {"kind":"object","properties":[{"name":"blockedBy","type":"93c33d9687613293","optional":false},{"name":"description","type":"4cd48f3e5108bd6e","optional":false},{"name":"id","type":"4cd48f3e5108bd6e","optional":false},{"name":"ownerId","type":"4cd48f3e5108bd6e","optional":true},{"name":"ownerName","type":"4cd48f3e5108bd6e","optional":true},{"name":"revision","type":"0657d3ca5ac4e7bf","optional":false},{"name":"status","type":"b2d2a01e51341a3b","optional":false},{"name":"subject","type":"4cd48f3e5108bd6e","optional":false},{"name":"writeScopes","type":"93c33d9687613293","optional":false}],"indices":[]},
+     "408927267422a7b2": {"kind":"object","properties":[{"name":"form","type":"fee1caf8ab6a65c1","optional":false},{"name":"kind","type":"0fe52387f6505270","optional":false}],"indices":[]},
++    "40c6827ff94f2c1e": {"kind":"object","properties":[{"name":"category","type":"4cd48f3e5108bd6e","optional":false},{"name":"childId","type":"4cd48f3e5108bd6e","optional":false},{"name":"version","type":"93d38436347f67c9","optional":false}],"indices":[]},
+     "4208123b50df5006": {"kind":"object","properties":[{"name":"data","type":"ad0c38a0adb82a94","optional":false},{"name":"ignorable","type":"dacf3d5f3e4ff619","optional":true},{"name":"seq","type":"0657d3ca5ac4e7bf","optional":false},{"name":"time","type":"0657d3ca5ac4e7bf","optional":false},{"name":"type","type":"3e0eff5946255ff0","optional":false}],"indices":[]},
++    "42094b7fc1755ed8": {"kind":"object","properties":[{"name":"data","type":"40c6827ff94f2c1e","optional":false},{"name":"ignorable","type":"dacf3d5f3e4ff619","optional":true},{"name":"seq","type":"0657d3ca5ac4e7bf","optional":false},{"name":"time","type":"0657d3ca5ac4e7bf","optional":false},{"name":"type","type":"5305d4bfbc692b02","optional":false}],"indices":[]},
+     "42e0916e0dda5f6d": {"kind":"object","properties":[{"name":"data","type":"7f9365bae9fcb73e","optional":false},{"name":"ignorable","type":"dacf3d5f3e4ff619","optional":true},{"name":"seq","type":"0657d3ca5ac4e7bf","optional":false},{"name":"time","type":"0657d3ca5ac4e7bf","optional":false},{"name":"type","type":"fe792a6cd4304945","optional":false}],"indices":[]},
+     "42e2ff61928fb7df": {"kind":"array","element":"c51f0d0a405bb96f"},
+     "4312134fc6f9cad5": {"kind":"literal","value":"turn/end"},
+@@ -915,6 +921,7 @@
+     "529e0ccd0e34079a": {"kind":"object","properties":[],"indices":[{"key":"4cd48f3e5108bd6e","value":"c592ce75aab73fca"}]},
+     "52c6113cb0e53f34": {"kind":"object","properties":[{"name":"form","type":"6f9e00383836275e","optional":false},{"name":"kind","type":"9ac52f0f84fec2eb","optional":false},{"name":"sections","type":"c748fb42c80a1200","optional":false}],"indices":[]},
+     "5302e76315127761": {"kind":"object","properties":[{"name":"error","type":"a81059ca06999da1","optional":true},{"name":"message","type":"4b259f7f8f0a44ad","optional":false},{"name":"meta","type":"c592ce75aab73fca","optional":true},{"name":"step","type":"0657d3ca5ac4e7bf","optional":false},{"name":"turn","type":"0657d3ca5ac4e7bf","optional":false}],"indices":[]},
++    "5305d4bfbc692b02": {"kind":"literal","value":"subagent/catalog-category"},
+     "530da6c0267813bb": {"kind":"union","types":["34d1ab5c5df37818","4f507598cf476214","e7ce49f12953583f","f789af5ab844827e"]},
+     "53cf1704ae0709c7": {"kind":"object","properties":[{"name":"form","type":"fee1caf8ab6a65c1","optional":false},{"name":"kind","type":"99e7e7d7fed55ae6","optional":false}],"indices":[]},
+     "54f9276a1617d7c1": {"kind":"object","properties":[{"name":"step","type":"0657d3ca5ac4e7bf","optional":false},{"name":"stream","type":"84bbfdce7d2eab5b","optional":false},{"name":"turn","type":"0657d3ca5ac4e7bf","optional":false}],"indices":[]},
+diff --git a/docs/subsystems/subagent.md b/docs/subsystems/subagent.md
+index 488ef66ac4..63e6edf1bc 100644
+--- a/docs/subsystems/subagent.md
++++ b/docs/subsystems/subagent.md
+@@ -462,6 +462,15 @@ startActivation(spec: SubagentActivationSpec & { readonly childId: SessionId }):
+  */
+ startActivation(spec: SubagentActivationSpec): Promise<SubagentActivation>
+ 
++/**
++ * 保存直接目录成员的发现与展示分类；同值调用不追加事件。
++ * @param parent - 拥有目录的已准备父会话。
++ * @param childId - 该目录中的直接成员。
++ * @param category - 非空分类；work 是缺省分类，未知分类按原值保存。
++ * @throws {SubagentError} 分类为空、成员不存在或目录投影不可用；失败前不改变目录。
++ */
++setCategory(parent: Session, childId: SessionId, category: string): void
++
+ /**
+  * Resolve the root shared by an Agent and its other agents in its subagent tree.
+  * @param caller - exact live Agent whose subagent ancestry selects the tree.
+@@ -615,7 +624,7 @@ registerProvider(provider: SubagentProvider): () => void
+ getProvider(name: string): SubagentProvider | undefined
+ ```
+ 
+-Types: [Agent](core.md) · [ContentBlock](llm-streaming.md) · [MessageId](llm-streaming.md) · [SessionId](core.md)
++Types: [Agent](core.md) · [ContentBlock](llm-streaming.md) · [MessageId](llm-streaming.md) · [Session](session.md) · [SessionId](core.md)
+ 
+ Source: [`packages/subagent/subagent/src/index.ts`](../../packages/subagent/subagent/src/index.ts)
+ 
+diff --git a/docs/subsystems/subagent.zh.md b/docs/subsystems/subagent.zh.md
+index 8f1d6b74a2..704322ff84 100644
+--- a/docs/subsystems/subagent.zh.md
++++ b/docs/subsystems/subagent.zh.md
+@@ -464,6 +464,15 @@ startActivation(spec: SubagentActivationSpec & { readonly childId: SessionId }):
+  */
+ startActivation(spec: SubagentActivationSpec): Promise<SubagentActivation>
+ 
++/**
++ * 保存直接目录成员的发现与展示分类；同值调用不追加事件。
++ * @param parent - 拥有目录的已准备父会话。
++ * @param childId - 该目录中的直接成员。
++ * @param category - 非空分类；work 是缺省分类，未知分类按原值保存。
++ * @throws {SubagentError} 分类为空、成员不存在或目录投影不可用；失败前不改变目录。
++ */
++setCategory(parent: Session, childId: SessionId, category: string): void
++
+ /**
+  * Resolve the root shared by an Agent and its other agents in its subagent tree.
+  * @param caller - exact live Agent whose subagent ancestry selects the tree.
+@@ -617,7 +626,7 @@ registerProvider(provider: SubagentProvider): () => void
+ getProvider(name: string): SubagentProvider | undefined
+ ```
+ 
+-Types: [Agent](core.zh.md) · [ContentBlock](llm-streaming.zh.md) · [MessageId](llm-streaming.zh.md) · [SessionId](core.zh.md)
++Types: [Agent](core.zh.md) · [ContentBlock](llm-streaming.zh.md) · [MessageId](llm-streaming.zh.md) · [Session](session.zh.md) · [SessionId](core.zh.md)
+ 
+ Source: [`packages/subagent/subagent/src/index.ts`](../../packages/subagent/subagent/src/index.ts)
+ 
+diff --git a/docs/tool-catalog.md b/docs/tool-catalog.md
+index 16c42b6393..06c587f771 100644
+--- a/docs/tool-catalog.md
++++ b/docs/tool-catalog.md
+@@ -2289,7 +2289,7 @@ Source: [`packages/subagent/tool-subagent-control/src/index.ts`](../packages/sub
+ 
+ ### `list_agents`
+ 
+-List your entire subagent tree: the root agent and all reachable continuable descendants, including yourself. Rows carry names, descriptions, and status. A descendant's name is its path from the root, such as reviewer/checker. You can message any other agent in the subagent tree. running means it is working; inactive means no turn is executing; it does not indicate task completion, success, or failure. corrupt, unsupported, or unavailable means this row's own descendants could not be read; the row itself is still a member you can message. While you remain active, you will be notified when a direct child finishes; there is no need to keep checking its status. Use send_message to continue the conversation.
++列出子树中的工作 Agent：根 Agent 及可继续执行的 work 分类后代。 其他分类成员及其下级保留在完整运行目录中。 Rows carry names, descriptions, and status. A descendant's name is its path from the root, such as reviewer/checker. You can message any other agent in the subagent tree. running means it is working; inactive means no turn is executing; it does not indicate task completion, success, or failure. corrupt, unsupported, or unavailable means this row's own descendants could not be read; the row itself is still a member you can message. While you remain active, you will be notified when a direct child finishes; there is no need to keep checking its status. Use send_message to continue the conversation.
+ 
+ ```json
+ {
+diff --git a/docs/upgrade-guide/v0.2.2-rc.5/subagent-catalog-category/guide.i18n.yaml b/docs/upgrade-guide/v0.2.2-rc.5/subagent-catalog-category/guide.i18n.yaml
+new file mode 100644
+index 0000000000..0ad7dfff73
+--- /dev/null
++++ b/docs/upgrade-guide/v0.2.2-rc.5/subagent-catalog-category/guide.i18n.yaml
+@@ -0,0 +1,16 @@
++# Bilingual-pair consistency record for guide.md (docs/i18n/README.md): per heading
++# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
++# After editing either side, bring the other along and re-record with:
++#   pnpm run verify-translation-pairing --write docs/upgrade-guide/v0.2.2-rc.5/subagent-catalog-category/guide.md
++/:
++  en: bcce07c6fd12bf6c
++  zh: bcce07c6fd12bf6c
++/section:
++  en: 57ffff70f8daff82
++  zh: d3ad0043414c8fa4
++/section/change:
++  en: 3852f421451fc593
++  zh: ddd020d9da53eac4
++/section/migration:
++  en: c2aac6a3b9403364
++  zh: 196430bc2880ead9
+diff --git a/docs/upgrade-guide/v0.2.2-rc.5/subagent-catalog-category/guide.md b/docs/upgrade-guide/v0.2.2-rc.5/subagent-catalog-category/guide.md
+new file mode 100644
+index 0000000000..192062da45
+--- /dev/null
++++ b/docs/upgrade-guide/v0.2.2-rc.5/subagent-catalog-category/guide.md
+@@ -0,0 +1,20 @@
++---
++kind: upgrade-guide
++description: "模型 list_agents 将目录发现收敛到 work 分类子树，完整运行目录保留所有分类。"
++---
++
++# 子代理目录分类
++
++English | [中文](guide.zh.md)
++
++## Change
++
++模型 `list_agents` 从完整可继续执行树改为根与 work 分类子树；非 work 成员及其下级保留在宿主完整目录中。分类只控制发现与展示，不改变名称、生命周期或权限。
++
++分类通过正式的可忽略信息事件保存。旧读者跳过分类后保留原目录；新读者把无分类历史目录视为 work。目录投影缓存升级为版本 7，并从持久日志重建。兼容依据见[持久类型记录](../../../persistence-changes/2026-11-22-subagent-catalog-category.md)。
++
++## Migration
++
++1. 创建审查子任务时，在 `SubagentActivationSpec` 中设置 `category: 'review'`；省略时继续使用 `work`。
++2. 需要完整运行树的消费者使用 `listDescendants`；工作发现使用 `list_agents`。仅对已确认身份的历史直接成员调用 `setCategory(parent, childId, 'review')`。
++3. 检查审查成员保留在完整目录中、工作发现仅列出 work 子树，并确认重启后分类保留。
+diff --git a/docs/upgrade-guide/v0.2.2-rc.5/subagent-catalog-category/guide.zh.md b/docs/upgrade-guide/v0.2.2-rc.5/subagent-catalog-category/guide.zh.md
+new file mode 100644
+index 0000000000..7a7c2ceedf
+--- /dev/null
++++ b/docs/upgrade-guide/v0.2.2-rc.5/subagent-catalog-category/guide.zh.md
+@@ -0,0 +1,20 @@
++---
++kind: upgrade-guide
++description: "模型 list_agents 将目录发现收敛到 work 分类子树，完整运行目录保留所有分类。"
++---
++
++# 子代理目录分类
++
++[English](guide.md) | 中文
++
++## 变更
++
++模型 `list_agents` 从完整可继续执行树改为根与 work 分类子树；非 work 成员及其下级保留在宿主完整目录中。分类只控制发现与展示，不改变名称、生命周期或权限。
++
++分类通过正式的可忽略信息事件保存。旧读者跳过分类后保留原目录；新读者把无分类历史目录视为 work。目录投影缓存升级为版本 7，并从持久日志重建。兼容依据见[持久类型记录](../../../persistence-changes/2026-11-22-subagent-catalog-category.zh.md)。
++
++## 迁移
++
++1. 创建审查子任务时，在 `SubagentActivationSpec` 中设置 `category: 'review'`；省略时继续使用 `work`。
++2. 需要完整运行树的消费者使用 `listDescendants`；工作发现使用 `list_agents`。仅对已确认身份的历史直接成员调用 `setCategory(parent, childId, 'review')`。
++3. 检查审查成员保留在完整目录中、工作发现仅列出 work 子树，并确认重启后分类保留。
+diff --git a/packages/client/ui-subagent/README.i18n.yaml b/packages/client/ui-subagent/README.i18n.yaml
+index 7381b1f9d5..ec359d0a74 100644
+--- a/packages/client/ui-subagent/README.i18n.yaml
++++ b/packages/client/ui-subagent/README.i18n.yaml
+@@ -15,8 +15,8 @@
+   en: d152484eb41ac6b4
+   zh: 09388d293f9be9cb
+ /deepseek-ai-dsh-client-ui-subagent/use-this-package:
+-  en: c7a9485c0cdcd9de
+-  zh: 903ad54e44d79eae
++  en: bd453e226260f76a
++  zh: 8e837a81b907e6e2
+ /deepseek-ai-dsh-client-ui-subagent/use-this-package/browsing-the-tree:
+   en: 35e983f0276188d0
+   zh: df588dc1523031da
+diff --git a/packages/client/ui-subagent/README.md b/packages/client/ui-subagent/README.md
+index 555c6fd2d9..0adee6fc9e 100644
+--- a/packages/client/ui-subagent/README.md
++++ b/packages/client/ui-subagent/README.md
+@@ -31,7 +31,7 @@ This package registers the `dsh-resource://subagentchat/session/<child>?parent=<
+ 
+ Every open catalog menu is 360px wide with 6px outer padding, constrained to fit the layout viewport. The root menu shows noncollapsible Subagents and Shared tasks headers only when Team mode is enabled, at least one nondeleted shared task exists, and the footer contribution is available. The Subagents header uses a Users icon and counts direct entries in completed, in progress, not running, and external order; zero counts are omitted and the separator matches the input task list. External tasks never count as running or completed. An empty Subagents section shows “No subagents” only alongside shared tasks. With Team mode off or no shared tasks, the menu shows only the subagent list, without section headers, a shared-task module, empty-state copy, or a divider; a real task-record failure remains a separate alert. Shared tasks have a 4px top margin rather than a divider. Both section headers keep a 7px icon/title gap and an additional 4px before their counts. Only the menu scrolls; sections have no nested scrolling. In WebKit-compatible browsers, the native 5px scrollbar sits in the right 6px inset with inset track ends and a stable gutter, preserving content width when scrolling becomes necessary. Other browsers retain their standard native scrollbar.
+ 
+-The root catalog exposes `conversation.session.header.actions.subagent.footer` for shared tasks. Child and ancestor breadcrumb catalogs show navigation only, without section headers.
++工作入口仅显示 `category` 为 `work` 或缺省的条目，并保留共享任务 footer。`review` 使用独立“审查”入口；其他分类使用相同菜单并显示原标识。非工作入口汇总已加载可达目录中的同类条目，显示总数、运行状态及进度；跨分类条目显示父会话名称，并保留真实导航地址。同类后代保持原生树展开；工作子 Agent 下的审查会随原生逐层读取进入独立入口。面包屑切换器仅显示当前会话所属分类。
+ 
+ The wide root count trigger shows a 14px Users icon in its 14px slot when no child is running and the shared ongoing loader otherwise, without a dropdown arrow. As the title row narrows, passive preset text hides at widths of 540px or less and the count text hides at 460px or less. The compact trigger always shows the Users icon, including while children are running; running indicators remain inside the menu. It matches More and sidebar controls: a 28×28px action with no padding, a 15px glyph in a 15px slot, secondary ink, and ghost hover and active backgrounds. Header actions use an 8px gap in compact layout and 10px in wide layout. The icon-only tooltip exposes the full count. Resizing preserves focus on the trigger. Subagent switchers retain their description-first text and existing icon.
+ 
+diff --git a/packages/client/ui-subagent/README.zh.md b/packages/client/ui-subagent/README.zh.md
+index 056fad6cde..8023d53f10 100644
+--- a/packages/client/ui-subagent/README.zh.md
++++ b/packages/client/ui-subagent/README.zh.md
+@@ -31,7 +31,7 @@ kind: "package-reference"
+ 
+ 每个打开的目录菜单宽度均为 360px，外层内边距为 6px，并受布局视口可用宽度约束。仅当 Team 模式已开启、存在至少一个未删除的共享任务且 footer 扩展可用时，根菜单才显示不可折叠的“子智能体”和“共享任务”标题。“子智能体”标题使用 Users 图标，仅统计直接条目，依次显示已完成、进行中、未运行和外部任务数量；省略零值，分隔符与输入区任务列表一致。外部任务不计入运行中或已完成数量。空的“子智能体”区域仅在同时展示共享任务时显示“暂无子智能体”。Team 模式关闭或没有共享任务时，菜单仅显示 subagent 列表，不显示区域标题、共享任务模块、空状态文案或分隔线；真实的任务记录错误仍以独立警告显示。共享任务上方保留 4px 外边距，不显示分隔线。两个区域标题均保留 7px 图标与文字间距，并在统计数量前额外留出 4px。仅菜单本身滚动，各区域不单独滚动。在兼容 WebKit 的浏览器中，原生 5px 滚动条位于右侧 6px 内边距内，轨道两端内缩，并保留稳定的滚动条空间，使内容在需要滚动时保持原有宽度。其他浏览器保留标准原生滚动条。
+ 
+-根会话目录通过 `conversation.session.header.actions.subagent.footer` 提供共享任务扩展。子会话与祖先面包屑目录只显示导航，不显示区域标题。
++工作入口仅显示 `category` 为 `work` 或缺省的条目，并保留共享任务 footer。`review` 使用独立“审查”入口；其他分类使用相同菜单并显示原标识。非工作入口汇总已加载可达目录中的同类条目，显示总数、运行状态及进度；跨分类条目显示父会话名称，并保留真实导航地址。同类后代保持原生树展开；工作子 Agent 下的审查会随原生逐层读取进入独立入口。面包屑切换器仅显示当前会话所属分类。
+ 
+ 宽布局下，根会话数量触发器在没有运行中 child 时，于 14px 图标位内显示 14px Users 图标，否则显示共享 ongoing loader，不带下拉箭头。标题行变窄时，静态预设文字在宽度不超过 540px 时隐藏，数量文字在不超过 460px 时隐藏。紧凑触发器始终显示 Users 图标，包括 child 运行期间；运行指示器仍在菜单内显示。它与更多及侧边栏控件一致：28×28px 操作区域，无内边距，15px 图标位内显示 15px 图标，使用次级前景色以及 ghost 悬停和按下背景。页头操作在紧凑布局中间距为 8px，宽布局中为 10px。纯图标工具提示提供完整数量。调整宽度不会丢失触发器焦点。subagent 切换器保留描述优先的文本与原有图标。
+ 
+diff --git a/packages/client/ui-subagent/src/client/SubagentHeaderLineage.module.css b/packages/client/ui-subagent/src/client/SubagentHeaderLineage.module.css
+index c450098395..b5db1b1ac9 100644
+--- a/packages/client/ui-subagent/src/client/SubagentHeaderLineage.module.css
++++ b/packages/client/ui-subagent/src/client/SubagentHeaderLineage.module.css
+@@ -30,6 +30,18 @@
+   gap: 4px;
+ }
+ 
++.categoryTrigger {
++  min-width: 0;
++  max-width: 244px;
++}
++
++.categoryTrigger .count {
++  min-width: 0;
++  overflow: hidden;
++  text-overflow: ellipsis;
++  white-space: nowrap;
++}
++
+ .switcherTrigger {
+   gap: 4px;
+   min-width: 0;
+@@ -229,6 +241,21 @@
+   overflow-wrap: anywhere;
+ }
+ 
++.categoryHeader {
++  flex-wrap: wrap;
++  color: var(--dsw-alias-label-primary);
++}
++
++.categoryHeader .sectionTitle {
++  flex-shrink: 1;
++  min-width: 0;
++  overflow-wrap: anywhere;
++}
++
++.categoryHeader .sectionIcon {
++  color: inherit;
++}
++
+ .sectionEmpty {
+   margin: 0;
+   padding: 0 7px 8px 28px;
+diff --git a/packages/client/ui-subagent/src/client/SubagentHeaderLineage.tsx b/packages/client/ui-subagent/src/client/SubagentHeaderLineage.tsx
+index 8cbb5be217..f539168f48 100644
+--- a/packages/client/ui-subagent/src/client/SubagentHeaderLineage.tsx
++++ b/packages/client/ui-subagent/src/client/SubagentHeaderLineage.tsx
+@@ -2,13 +2,12 @@ import { useMemo, useEffect, useId, useRef, useState, type KeyboardEvent, type M
+ import { createPortal } from 'react-dom'
+ import {
+   type SessionProjectionMap, type SessionSummary,
+-  type SessionProjectionSnapshot,
+ } from '@deepseek-ai/dsh-api-session-controller/client'
+ import type { SubagentAddress } from '@deepseek-ai/dsh-subagent/client'
+ import type { SessionId } from '@deepseek-ai/dsh-session/types'
+ import {
+   IconChevronRightOutlineRegular, IconRefreshOutlineRegular, IconUsersOutlineRegular,
+-  IconCheckOutlineRegular, MenuSurface, StateDot, Tooltip,
++  IconCheckOutlineRegular, IconShieldOutlineRegular, MenuSurface, StateDot, Tooltip,
+ } from '@deepseek-ai/dsh-client-ui-primitives'
+ import type { HostObservable, InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime, TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
+ import { NS } from './locales.ts'
+@@ -16,14 +15,9 @@ import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
+ import type {} from '@deepseek-ai/dsh-token-meter/client'
+ import type {} from '@deepseek-ai/dsh-agent-team/client'
+ import type {} from './slots.ts'
++import { groupCatalogs, type CatalogGroup, type Catalogs, type SubagentCatalogSnapshot } from './catalog-groups.ts'
+ import css from './SubagentHeaderLineage.module.css'
+ 
+-type SubagentCatalogSnapshot = Omit<SessionProjectionSnapshot, 'values' | 'state'> & {
+-  state: 'idle' | 'loading' | 'ready' | 'migration-required' | 'error'
+-  entries: (SessionProjectionMap['subagentCatalog'][number] & { activity: 'running' | 'inactive' })[]
+-}
+-type Catalogs = Readonly<Record<SessionId, SubagentCatalogSnapshot>>
+-
+ /** Business actions supplied by the slot registration. */
+ export type SubagentCatalogInjected = {
+   openChild: (address: SubagentAddress) => void
+@@ -299,7 +293,11 @@ function CatalogRows({
+           : completed
+             ? t('activity.completed')
+             : t('activity.inactive')
+-        const secondary = [secondaryLabel, mode, activity]
++        const ownerSessionId = entry.parentSessionId ?? parentSessionId
++        const parentLabel = entry.parentSessionId === undefined || entry.parentSessionId === parentSessionId
++          ? undefined
++          : t('entry.parent', { parent: summaries[entry.parentSessionId]?.displayTitle ?? entry.parentSessionId })
++        const secondary = [secondaryLabel, parentLabel, mode, activity]
+           .filter(value => value !== undefined)
+           .join(' · ')
+         const totalTokens = tokenTotal(summary?.projectionValues?.tokenUsage)
+@@ -324,7 +322,7 @@ function CatalogRows({
+         const open = (): void => {
+           if (external) return
+           openChild({
+-            parentSessionId,
++            parentSessionId: ownerSessionId,
+             childSessionId: entry.id,
+             mode: entry.mode,
+           })
+@@ -386,6 +384,7 @@ function CatalogRows({
+                   {secondaryLabel !== undefined && (
+                     <span className={css.secondaryLabel}>{secondaryLabel}</span>
+                   )}
++                  {parentLabel !== undefined && <span className={css.secondaryLabel}>{parentLabel}</span>}
+                 </span>
+                 {metrics !== '' && (
+                   <span className={css.metrics}>
+@@ -415,7 +414,7 @@ function CatalogRows({
+                         onClick={(event) => {
+                           event.preventDefault()
+                           event.stopPropagation()
+-                          openChildAside({ parentSessionId, childSessionId: entry.id, mode: entry.mode })
++                          openChildAside({ parentSessionId: ownerSessionId, childSessionId: entry.id, mode: entry.mode })
+                           closeCatalog()
+                         }}
+                         onKeyDown={(event) => { event.stopPropagation() }}
+@@ -497,16 +496,11 @@ type CatalogDropdownProps = CatalogDropdownSharedProps & (
+   }
+ )
+ 
+-/** One trigger-plus-tree dropdown over the catalog rooted at `rootSessionId`. */
+-function CatalogDropdown(props: CatalogDropdownProps) {
+-  const {
+-    rootSessionId, currentSessionId, displayTitle, openTitle, variant,
+-    useSessions, useSessionStatus, openChild, openChildAside, prepareCatalog, t, hasSharedTasks = false,
+-  } = props
+-  const ancestorSwitcher = variant === 'switcher' && openTitle !== undefined
+-  const projections = useSessions(state => state.projectionsBySession)
+-  const summaries = useSessions(state => state.byId)
+-  const statuses = useSessionStatus(value => value)
++/** 分类入口共享框架数据；当前面包屑只切换同类会话。 */
++function CatalogDropdowns(props: CatalogDropdownProps) {
++  const projections = props.useSessions(state => state.projectionsBySession)
++  const summaries = props.useSessions(state => state.byId)
++  const statuses = props.useSessionStatus(value => value)
+   const catalogs = useMemo<Catalogs>(() => {
+     return Object.fromEntries(Object.entries(projections).map(([id, snapshot]) => {
+       const projected = snapshot.values.subagentCatalog
+@@ -524,6 +518,37 @@ function CatalogDropdown(props: CatalogDropdownProps) {
+       } satisfies SubagentCatalogSnapshot]
+     }))
+   }, [projections, summaries, statuses])
++  const groups = useMemo(() => groupCatalogs(catalogs, props.rootSessionId), [catalogs, props.rootSessionId])
++  const currentCategory = props.variant === 'switcher'
++    ? catalogs[props.rootSessionId]?.entries.find(entry => entry.id === props.currentSessionId)?.category ?? 'work'
++    : undefined
++  return (
++    <>
++      {groups.filter(group => currentCategory === undefined || group.category === currentCategory).map(group => (
++        <CatalogDropdown
++          key={group.category}
++          {...props}
++          group={group}
++          summaries={summaries}
++          hasSharedTasks={group.category === 'work' && props.hasSharedTasks === true}
++          hasBoardContent={group.category === 'work' && props.hasBoardContent === true}
++        />
++      ))}
++    </>
++  )
++}
++
++/** 一个分类复用原生触发器、树、键盘导航与延迟读取。 */
++function CatalogDropdown(props: CatalogDropdownProps & { group: CatalogGroup; summaries: CatalogRowsProps['summaries'] }) {
++  const {
++    rootSessionId, currentSessionId, displayTitle, openTitle, variant, group, summaries,
++    openChild, openChildAside, prepareCatalog, t, hasSharedTasks = false,
++  } = props
++  const catalogs = group.catalogs
++  const category = group.category
++  const categoryLabel = category === 'review' ? t('category.review') : category
++  const treeLabel = category === 'work' ? t('tree.aria') : t('category.tree', { category: categoryLabel })
++  const ancestorSwitcher = variant === 'switcher' && openTitle !== undefined
+   const catalog = catalogs[rootSessionId]
+   const prepareLevel = (sessionId: SessionId): void => {
+     void prepareCatalog(sessionId).catch((error: unknown) => {
+@@ -548,12 +573,18 @@ function CatalogDropdown(props: CatalogDropdownProps) {
+   const switcherDisplayTitle = currentEntry !== undefined
+     ? currentEntry.label || entryName(currentEntry)
+     : displayTitle
+-  const directChildren = catalog?.entries ?? []
++  const directChildren = group.entries
+   const directCount = directChildren.length
+   const runningCount = directChildren.filter(entry => entry.activity === 'running').length
+   const progress = catalogProgress(directChildren, summaries, t)
+   const totalCountKey = directCount === 1 ? 'count.total.one' : 'count.total.other'
+   const runningCountKey = runningCount === 1 ? 'count.running.one' : 'count.running.other'
++  const countLabel = category === 'work'
++    ? t(totalCountKey, { count: directCount })
++    : t('category.count', { category: categoryLabel, count: directCount })
++  const runningLabel = category === 'work'
++    ? t(runningCountKey, { count: runningCount })
++    : t('category.running', { category: categoryLabel, count: runningCount })
+   const presentedCatalog: SubagentCatalogSnapshot | undefined = catalog ?? (variant === 'switcher' || props.hasBoardContent
+     ? { entries: [], state: 'idle', error: null }
+     : undefined)
+@@ -715,7 +746,7 @@ function CatalogDropdown(props: CatalogDropdownProps) {
+       onPointerLeave={scheduleHoverClose}
+     >
+       <Tooltip
+-        label={t(totalCountKey, { count: directCount })}
++        label={countLabel}
+         disabled={open || variant === 'switcher'}
+         delayMs={500} portal side="bottom"
+       >
+@@ -728,12 +759,12 @@ function CatalogDropdown(props: CatalogDropdownProps) {
+           type="button"
+           className={variant === 'switcher'
+             ? `${css.switcherTrigger} ${ancestorSwitcher ? css.ancestorSwitcherTrigger : ''}`
+-            : css.trigger}
++            : `${css.trigger} ${category === 'work' ? '' : css.categoryTrigger}`}
+           aria-haspopup="dialog"
+           aria-expanded={open}
+           aria-label={variant === 'switcher'
+             ? t('switcher.aria', { title: switcherDisplayTitle })
+-            : t(totalCountKey, { count: directCount })}
++            : countLabel}
+           aria-describedby={variant === 'count' && runningCount > 0 ? activityId : undefined}
+           onClick={openTitle === undefined
+             ? () => {
+@@ -767,17 +798,19 @@ function CatalogDropdown(props: CatalogDropdownProps) {
+             : (
+               <>
+                 <span className={css.activitySlot} aria-hidden>
+-                  <IconUsersOutlineRegular size={14} className={runningCount > 0 ? css.compactIcon : undefined} />
++                  {category === 'review'
++                    ? <IconShieldOutlineRegular size={14} className={runningCount > 0 ? css.compactIcon : undefined} />
++                    : <IconUsersOutlineRegular size={14} className={runningCount > 0 ? css.compactIcon : undefined} />}
+                   {runningCount > 0 && <StateDot state="ongoing" className={css.textModeActivity} />}
+                 </span>
+-                <span ref={countRef} className={css.count} data-subagent-count>{t(totalCountKey, { count: directCount })}</span>
++                <span ref={countRef} className={css.count} data-subagent-count>{countLabel}</span>
+               </>
+             )}
+           {variant === 'switcher' && <SubagentSwitcherIcon />}
+         </button>
+       </Tooltip>
+       {variant === 'count' && runningCount > 0 && (
+-        <span id={activityId} hidden>{t(runningCountKey, { count: runningCount })}</span>
++        <span id={activityId} hidden>{runningLabel}</span>
+       )}
+       {open && createPortal((
+         <MenuSurface
+@@ -786,7 +819,7 @@ function CatalogDropdown(props: CatalogDropdownProps) {
+           style={{ positionAnchor: anchorName }}
+           role="dialog"
+           tabIndex={-1}
+-          aria-label={t('tree.aria')}
++          aria-label={treeLabel}
+           data-subagent-panel
+           onPointerEnter={(event) => {
+             if (event.pointerType !== 'touch') cancelHoverClose()
+@@ -794,17 +827,18 @@ function CatalogDropdown(props: CatalogDropdownProps) {
+           onPointerLeave={scheduleHoverClose}
+         >
+           <div className={css.menuBody}>
+-            {hasSharedTasks && (
+-              <div className={css.sectionHeader} data-subagent-section-header>
+-                <span className={css.sectionIcon} aria-hidden><IconUsersOutlineRegular size={14} /></span>
+-                <h3 className={css.sectionTitle}>{t('section.title')}</h3>
++            {(hasSharedTasks || category !== 'work') && (
++              <div className={`${css.sectionHeader} ${category === 'work' ? '' : css.categoryHeader}`} data-subagent-section-header>
++                <span className={css.sectionIcon} aria-hidden>{category === 'review'
++                  ? <IconShieldOutlineRegular size={14} /> : <IconUsersOutlineRegular size={14} />}</span>
++                <h3 className={css.sectionTitle}>{category === 'work' ? t('section.title') : categoryLabel}</h3>
+                 {progress && <span className={css.sectionProgress}>{progress}</span>}
+               </div>
+             )}
+             {hasSharedTasks && presentedCatalog.state === 'ready' && directCount === 0 && (
+               <p className={css.sectionEmpty}>{t('section.empty')}</p>
+             )}
+-            <div role="tree" aria-label={t('tree.aria')}>
++            <div role="tree" aria-label={treeLabel}>
+               <CatalogRows
+                 parentSessionId={rootSessionId}
+                 currentSessionId={currentSessionId}
+@@ -821,7 +855,7 @@ function CatalogDropdown(props: CatalogDropdownProps) {
+                 t={t}
+               />
+             </div>
+-            {props.renderFooter?.()}
++            {category === 'work' && props.renderFooter?.()}
+           </div>
+         </MenuSurface>
+       ), document.body)}
+@@ -859,7 +893,7 @@ function RootCatalogAction({
+   const hasTaskFailure = useProjection('agentTeam', team => team?.enabled === true && team.failure !== undefined)
+   const footerAvailable = useFooterAvailable(value => value)
+   return (
+-    <CatalogDropdown
++    <CatalogDropdowns
+       key={sessionId}
+       rootSessionId={sessionId}
+       variant="count"
+@@ -901,7 +935,7 @@ export function SubagentHeaderLineage({
+   if (parentId === undefined) return null
+   return (
+     <>
+-      <CatalogDropdown
++      <CatalogDropdowns
+         key={`switcher:${lineageSessionId}`}
+         rootSessionId={parentId}
+         currentSessionId={lineageSessionId}
+@@ -911,7 +945,7 @@ export function SubagentHeaderLineage({
+         {...shared}
+       />
+       {openTitle === undefined && (
+-        <CatalogDropdown
++        <CatalogDropdowns
+           key={`children:${lineageSessionId}`}
+           rootSessionId={lineageSessionId}
+           variant="count"
+diff --git a/packages/client/ui-subagent/src/client/catalog-groups.ts b/packages/client/ui-subagent/src/client/catalog-groups.ts
+new file mode 100644
+index 0000000000..69d6e83c5b
+--- /dev/null
++++ b/packages/client/ui-subagent/src/client/catalog-groups.ts
+@@ -0,0 +1,69 @@
++/** 从已加载目录派生分类树；保留跨分类条目的真实父会话，不发起读取。 */
++import type { SessionProjectionMap, SessionProjectionSnapshot } from '@deepseek-ai/dsh-api-session-controller/client'
++import type { SessionId } from '@deepseek-ai/dsh-session/types'
++
++/** 带展示状态与跨分类导航地址的目录项。 */
++export type CatalogEntry = SessionProjectionMap['subagentCatalog'][number] & {
++  activity: 'running' | 'inactive'
++  parentSessionId?: SessionId
++}
++
++/** 原生投影的加载状态与当前分类可见条目。 */
++export type SubagentCatalogSnapshot = Omit<SessionProjectionSnapshot, 'values' | 'state'> & {
++  state: 'idle' | 'loading' | 'ready' | 'migration-required' | 'error'
++  entries: CatalogEntry[]
++}
++
++/** 共享投影中已加载的各会话目录。 */
++export type Catalogs = Readonly<Record<SessionId, SubagentCatalogSnapshot>>
++
++/** 一类条目的目录树与入口计数成员。 */
++export interface CatalogGroup {
++  category: string
++  catalogs: Catalogs
++  entries: CatalogEntry[]
++}
++
++/**
++ * 按 category 派生工作树和其他分类的可达子树，缺省分类为 work。
++ * 跨分类条目提升到该分类入口，保留真实父地址；同类后代仍由原生展开控制。
++ * @param catalogs - 已加载的完整目录，不读取未加载层级。
++ * @param rootSessionId - 当前入口的目录根。
++ * @returns 工作分组在前，其余分组按首次发现顺序排列。
++ */
++export function groupCatalogs(catalogs: Catalogs, rootSessionId: SessionId): CatalogGroup[] {
++  const categories = new Map<string, CatalogEntry[]>([['work', []]])
++  const roots = new Map<string, CatalogEntry[]>()
++  const visited = new Set<SessionId>()
++  const visit = (parentSessionId: SessionId, parentCategory?: string): void => {
++    if (visited.has(parentSessionId)) return
++    visited.add(parentSessionId)
++    for (const entry of catalogs[parentSessionId]?.entries ?? []) {
++      const category = entry.category ?? 'work'
++      const entries = categories.get(category) ?? []
++      if (!categories.has(category)) categories.set(category, entries)
++      entries.push(entry)
++      if (category !== 'work' && (parentSessionId === rootSessionId || parentCategory !== category)) {
++        const promoted = roots.get(category) ?? []
++        if (!roots.has(category)) roots.set(category, promoted)
++        promoted.push({ ...entry, parentSessionId })
++      }
++      if (entry.mode !== 'external') visit(entry.id, category)
++    }
++  }
++  visit(rootSessionId)
++  return [...categories].map(([category, entries]) => {
++    const filtered: Record<SessionId, SubagentCatalogSnapshot> = Object.fromEntries(
++      Object.entries(catalogs).map(([id, catalog]) => [id, {
++        ...catalog, entries: catalog.entries.filter(entry => (entry.category ?? 'work') === category),
++      }]),
++    )
++    if (category !== 'work' && catalogs[rootSessionId] !== undefined) {
++      filtered[rootSessionId] = { ...catalogs[rootSessionId], entries: roots.get(category) ?? [] }
++    }
++    return {
++      category, catalogs: filtered,
++      entries: category === 'work' ? filtered[rootSessionId]?.entries ?? [] : entries,
++    }
++  })
++}
+diff --git a/packages/client/ui-subagent/src/client/locales.ts b/packages/client/ui-subagent/src/client/locales.ts
+index 83754edd6c..07d481d8d8 100644
+--- a/packages/client/ui-subagent/src/client/locales.ts
++++ b/packages/client/ui-subagent/src/client/locales.ts
+@@ -5,6 +5,11 @@ export const NS = 'subagent'
+ 
+ /** Simplified Chinese dictionary (the key-set source of truth). */
+ export const zh = {
++  'category.review': '审查',
++  'category.count': '{category} · {count}',
++  'category.running': '{category}，{count} 个正在运行',
++  'category.tree': '{category}会话',
++  'entry.parent': '父会话：{parent}',
+   'section.title': '子智能体',
+   'section.empty': '暂无子智能体',
+   'progress.completed': '{count} 已完成',
+@@ -56,6 +61,11 @@ export const zh = {
+ 
+ /** English dictionary, key-identical to the Chinese source of truth. */
+ export const en: Record<SubagentKey, string> = {
++  'category.review': 'Review',
++  'category.count': '{category} · {count}',
++  'category.running': '{count} {category} sessions running',
++  'category.tree': '{category} sessions',
++  'entry.parent': 'Parent: {parent}',
+   'section.title': 'Subagents',
+   'section.empty': 'No subagents',
+   'progress.completed': '{count} completed',
+@@ -110,6 +120,11 @@ export type SubagentKey = keyof typeof zh
+ 
+ /** Japanese copy, checked against the English keys. */
+ export const ja = {
++  'category.review': 'レビュー',
++  'category.count': '{category} · {count}',
++  'category.running': '{category} {count}件実行中',
++  'category.tree': '{category}セッション',
++  'entry.parent': '親セッション: {parent}',
+   'section.title': 'サブエージェント',
+   'section.empty': 'サブエージェントはありません',
+   'progress.completed': '{count}件完了',
+@@ -161,6 +176,11 @@ export const ja = {
+ 
+ /** Spanish dictionary, checked against the English keys. */
+ export const es = {
++  'category.review': 'Revisión',
++  'category.count': '{category} · {count}',
++  'category.running': '{count} sesiones de {category} en ejecución',
++  'category.tree': 'Sesiones de {category}',
++  'entry.parent': 'Principal: {parent}',
+   'section.title': 'Subagentes',
+   'section.empty': 'No hay subagentes',
+   'progress.completed': '{count} completado',
+@@ -212,6 +232,11 @@ export const es = {
+ 
+ /** French dictionary, checked against the English keys. */
+ export const fr = {
++  'category.review': 'Revue',
++  'category.count': '{category} · {count}',
++  'category.running': '{count} sessions {category} en cours',
++  'category.tree': 'Sessions {category}',
++  'entry.parent': 'Parent : {parent}',
+   'section.title': 'Sous-agents',
+   'section.empty': 'Aucun sous-agent',
+   'progress.completed': '{count} terminé',
+@@ -263,6 +288,11 @@ export const fr = {
+ 
+ /** German dictionary, checked against the English keys. */
+ export const de = {
++  'category.review': 'Prüfung',
++  'category.count': '{category} · {count}',
++  'category.running': '{count} {category}-Sitzungen laufen',
++  'category.tree': '{category}-Sitzungen',
++  'entry.parent': 'Übergeordnet: {parent}',
+   'section.title': 'Subagenten',
+   'section.empty': 'Keine Subagenten',
+   'progress.completed': '{count} abgeschlossen',
+@@ -314,6 +344,11 @@ export const de = {
+ 
+ /** Russian dictionary, checked against the English keys. */
+ export const ru = {
++  'category.review': 'Проверка',
++  'category.count': '{category} · {count}',
++  'category.running': 'Выполняются сеансы {category}: {count}',
++  'category.tree': 'Сеансы {category}',
++  'entry.parent': 'Родитель: {parent}',
+   'section.title': 'Субагенты',
+   'section.empty': 'Нет субагентов',
+   'progress.completed': '{count} завершено',
+@@ -365,6 +400,11 @@ export const ru = {
+ 
+ /** Portuguese dictionary, checked against the English keys. */
+ export const pt = {
++  'category.review': 'Revisão',
++  'category.count': '{category} · {count}',
++  'category.running': '{count} sessões de {category} em execução',
++  'category.tree': 'Sessões de {category}',
++  'entry.parent': 'Principal: {parent}',
+   'section.title': 'Subagentes',
+   'section.empty': 'Nenhum subagente',
+   'progress.completed': '{count} concluído',
+diff --git a/packages/core/session/README.i18n.yaml b/packages/core/session/README.i18n.yaml
+index 0d793887f4..096a98e4fb 100644
+--- a/packages/core/session/README.i18n.yaml
++++ b/packages/core/session/README.i18n.yaml
+@@ -21,8 +21,8 @@
+   en: 971e583b3d6c1af8
+   zh: c7da934ecb8f1e87
+ /deepseek-ai-dsh-session/use-this-package/append-and-derive:
+-  en: c9ad40c8a8f2cd0b
+-  zh: 0b76ae73f39bbb18
++  en: 948ae8e92c253046
++  zh: 211d6d0869033fad
+ /deepseek-ai-dsh-session/use-this-package/read-the-log:
+   en: c4bf3103b9762b6c
+   zh: 369c734bb20de2ea
+diff --git a/packages/core/session/README.md b/packages/core/session/README.md
+index 3b55b1fcce..b4651a7cfa 100644
+--- a/packages/core/session/README.md
++++ b/packages/core/session/README.md
+@@ -51,6 +51,8 @@ session.deriveMessages()         // the derived model history
+ 
+ Surface events (`system/message`, `developer/message`, `user/message`, `assistant/message`, `tool/result`) require `surfaceOp` in both typed events and append input. A replacement uses exactly `{ op: 'replace', startSeq, endSeq }`, with inclusive `SessionSeq` endpoints in current surface order. An Assistant message embeds its exact compact provider stream and forbids `sourceEventSeqs`. Known log-only events forbid both metadata fields and never produce a message.
+ 
++非 surface 的正式信息事件可传 `{ ignorable: true }`；Session 将该标记与载荷一起复制并固化到 envelope。未知读者可以安全跳过这类信息。省略标记时事件仍是必须识别的事实；surface 事件不接受此选项。
++
+ `developer/message` stores tool-addition names and a `headerSeq` reference to an earlier `request/header`. The reference is required exactly when additions are present, and each name must identify exactly one complete schema in that header. Removals name the tool without a header reference. Historical headers remain available across restart, fork, and surface replacement; the current registry and latest header do not select an earlier addition's definition. `sourceEventSeqs` continues to describe derivation and replaced nodes.
+ 
+ Plugins declare content-changing events with `@messageProjection` and register a pure definition through `ctx.sessions.registerMessageProjection()`. Session calls the definition before accepting an event and caches its immutable message updates. Missing definitions reject append and restore; unloading a used definition also blocks cached reads. Detached constructors and `foldSurface(events, projections)` require explicit definitions. Reconstructors pass the fold's `projectedMessages` to `deriveEventMessage()`; live instance methods apply the same projections automatically. [Plugin-owned message projections](../../../.agents/notes/implemented/architecture/2026-09-11-plugin-owned-message-projections.md) defines ownership and offline assembly.
+diff --git a/packages/core/session/README.zh.md b/packages/core/session/README.zh.md
+index 9ca25d8a11..f590d2e2a9 100644
+--- a/packages/core/session/README.zh.md
++++ b/packages/core/session/README.zh.md
+@@ -51,6 +51,8 @@ session.deriveMessages()         // the derived model history
+ 
+ 表层事件（`system/message`、`developer/message`、`user/message`、`assistant/message`、`tool/result`）在类型化事件与追加输入中都必须带有 `surfaceOp`。替换操作仅接受 `{ op: 'replace', startSeq, endSeq }`，端点为包含边界的 `SessionSeq`，按当前 surface 顺序解释。assistant 消息会嵌入精确、紧凑的提供方流，并禁止 `sourceEventSeqs`。已知仅日志事件禁止这两个元数据字段，且从不产生消息。
+ 
++非 surface 的正式信息事件可传 `{ ignorable: true }`；Session 将该标记与载荷一起复制并固化到 envelope。未知读者可以安全跳过这类信息。省略标记时事件仍是必须识别的事实；surface 事件不接受此选项。
++
+ `developer/message` 存储工具添加名称，以及指向更早 `request/header` 的 `headerSeq` 引用。仅在存在添加块时必须携带该引用，每个名称必须在所引用的请求头中恰好对应一个完整模式。移除块仅记录工具名称，不携带请求头引用。重启、fork 和 surface 替换保留历史请求头；较早添加的定义不由当前注册表或最新请求头决定。`sourceEventSeqs` 继续描述派生来源及被替换节点。
+ 
+ 插件用 `@messageProjection` 声明修改内容的事件，并通过 `ctx.sessions.registerMessageProjection()` 注册纯处理器。Session 在接受事件前调用处理器，并缓存其不可变消息更新。缺少处理器时拒绝追加和恢复，卸载已经使用的处理器后也会拒绝读取缓存。独立构造函数和 `foldSurface(events, projections)` 必须显式接收处理器。重建函数将折叠结果的 `projectedMessages` 传给 `deriveEventMessage()`，实时实例方法自动应用相同的投影。[插件拥有消息投影](../../../.agents/notes/implemented/architecture/2026-09-11-plugin-owned-message-projections.zh.md)说明职责划分和离线装配。
+diff --git a/packages/core/session/src/index.ts b/packages/core/session/src/index.ts
+index ea6c337f55..a497f9476c 100644
+--- a/packages/core/session/src/index.ts
++++ b/packages/core/session/src/index.ts
+@@ -15,8 +15,8 @@ import type { Scoped } from '@deepseek-ai/dsh-scope'
+ import type { Message } from '@deepseek-ai/dsh-llm'
+ import { SESSION_FORMAT_VERSION, SessionLogOffset, SessionSeq } from './types.ts'
+ import type { TypertLookup } from '@deepseek-ai/dsh-typert-protocol'
+-import type { CreateSessionOptions, EpochHeader, PluginRecord, PluginRecordMap, PluginRecordType, PrepareSessionOptions, RequestContext, SessionEvent, SessionEventInput, SessionEventMap, SessionEventType, SessionHeader, SessionId, SessionSeedEventState, SurfaceIntent, SurfaceEventType } from './types.ts'
+-import { SurfaceManager, validateSessionEventData, validateSurfaceMetadata } from './surface.ts'
++import type { CreateSessionOptions, EpochHeader, PluginRecord, PluginRecordMap, PluginRecordType, PrepareSessionOptions, RequestContext, SessionEvent, SessionEventInput, SessionEventMap, SessionEventType, SessionHeader, SessionId, SessionSeedEventState, LogEventIntent, SurfaceIntent, SurfaceEventType } from './types.ts'
++import { SurfaceManager, isSurfaceEligibleType, validateSessionEventData, validateSurfaceMetadata } from './surface.ts'
+ import type { SessionSurface, SessionMessageProjection } from './surface.ts'
+ import { foldRequestHeader } from './request-header.ts'
+ import { ToolHistoryProjection } from './tool-history.ts'
+@@ -521,14 +521,19 @@ export function pluginRecordOf(event: SessionEvent): PluginRecord | undefined {
+ function snapshotAppend(
+   type: SessionEventType,
+   data: SessionEventMap[SessionEventType] | undefined,
+-  opts: SurfaceIntent | undefined,
++  opts: SurfaceIntent | LogEventIntent | undefined,
+   subject: string,
+ ) {
++  const ignorable: unknown = opts !== undefined && 'ignorable' in opts ? opts.ignorable : undefined
++  if (ignorable !== undefined && (ignorable !== true || isSurfaceEligibleType(type))) {
++    throw new Error(`${subject} 仅非 surface 信息事件可以设置 ignorable: true`)
++  }
+   const surfaceOp = opts?.surfaceOp
+   const sourceEventSeqs = opts?.sourceEventSeqs
+   const dataSnapshot = snapshotJsonValue(data)
+   if (dataSnapshot === undefined) throw new Error(`${subject} carries non-JSON-serializable data`)
+   const surface = snapshotJsonValue({
++    ...ignorable === undefined ? {} : { ignorable },
+     ...sourceEventSeqs === undefined ? {} : { sourceEventSeqs },
+     ...surfaceOp === undefined ? {} : { surfaceOp },
+   })
+@@ -821,15 +826,9 @@ export class Session {
+    *
+    * @param type - The event type (key of {@link SessionEventMap}).
+    * @param data - The event payload; must be JSON-serializable.
+-   * @param opts - Surface metadata: `surfaceOp` controls how the event enters
+-   *   the ordered surface; `sourceEventSeqs` lists the seq numbers of earlier
+-   *   events this one derives from. REQUIRED for
+-   *   {@link SurfaceEventType} events (every message-producing event must
+-   *   declare how it joins the surface, the sole source of derived model
+-   *   history) and
+-   *   rejected by the compiler for non-surface types like `turn/start` or
+-   *   `assistant/attempt`. Assistant messages embed their exact provider
+-   *   stream and cannot cite top-level source events.
++   * @param opts - Surface 事件必须声明 surfaceOp，可用 sourceEventSeqs 引用较早来源；
++   *   assistant/message 内嵌提供方流，不接受来源引用。非 surface 事件接受可选的
++   *   ignorable: true，表示未知读者跳过该信息事实仍可安全重建会话。
+    * @returns the logged event — its assigned `seq`/`time` plus the SNAPSHOT of
+    *   `data` that entered the log, so reading `event.data` back sees the logged
+    *   value, never the caller's still-mutable input.
+@@ -853,12 +852,12 @@ export class Session {
+   append<T extends SessionEventType>(
+     type: T,
+     data: SessionEventMap[T],
+-    ...opts: T extends SurfaceEventType ? [opts: SurfaceIntent<T>] : []
++    ...opts: T extends SurfaceEventType ? [opts: SurfaceIntent<T>] : [opts?: LogEventIntent]
+   ): SessionEvent<T>
+   append(
+     type: SessionEventType | readonly SessionEventInput[],
+     data?: SessionEventMap[SessionEventType],
+-    ...opts: [opts?: SurfaceIntent]
++    ...opts: [opts?: SurfaceIntent | LogEventIntent]
+   ): SessionEvent | readonly SessionEvent[] {
+     if (typeof type !== 'string') return this.#appendEvents(type)
+     this.publicationEntry()
+diff --git a/packages/core/session/src/known-event-types.ts b/packages/core/session/src/known-event-types.ts
+index 466e76bb80..0f9bc4bc57 100644
+--- a/packages/core/session/src/known-event-types.ts
++++ b/packages/core/session/src/known-event-types.ts
+@@ -60,6 +60,7 @@ export const KNOWN_SESSION_EVENT_TYPES: ReadonlySet<string> = new Set([
+   'step/end',
+   'step/start',
+   'subagent/catalog',
++  'subagent/catalog-category',
+   'subagent/descriptor',
+   'subagent/model-selection-policy',
+   'system/message',
+diff --git a/packages/core/session/src/types.ts b/packages/core/session/src/types.ts
+index 0cf13c86a0..7e1e1c412b 100644
+--- a/packages/core/session/src/types.ts
++++ b/packages/core/session/src/types.ts
+@@ -485,9 +485,20 @@ export type SurfaceIntent<T extends SurfaceEventType = SurfaceEventType> = {
+   sourceEventSeqs?: SessionSeq[]
+ })
+ 
++/** 非 surface 信息事件的可忽略标记；省略时读者必须识别事件。 */
++export interface LogEventIntent {
++  readonly ignorable?: true
++  readonly surfaceOp?: never
++  readonly sourceEventSeqs?: never
++}
++
+ /** One positional event call proposed for append, without assigned sequence or time. */
+ export type SessionEventInput = {
+-  [K in SessionEventType]: readonly [type: K, data: SessionEventMap[K], ...opts: K extends SurfaceEventType ? [opts: SurfaceIntent<K>] : []]
++  [K in SessionEventType]: readonly [
++    type: K,
++    data: SessionEventMap[K],
++    ...opts: K extends SurfaceEventType ? [opts: SurfaceIntent<K>] : [opts?: LogEventIntent],
++  ]
+ }[SessionEventType]
+ 
+ /**
+diff --git a/packages/extensions/tool-cordis/src/api-catalog.ts b/packages/extensions/tool-cordis/src/api-catalog.ts
+index 919025faa0..80a3e315fe 100644
+--- a/packages/extensions/tool-cordis/src/api-catalog.ts
++++ b/packages/extensions/tool-cordis/src/api-catalog.ts
+@@ -3914,6 +3914,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
+         parameters: [{ name: 'spec', description: 'task, backend, and result recipient.' }],
+         returns: 'activation with a message id only for local children.',
+       },
++      {
++        signature: 'setCategory(parent: Session, childId: SessionId, category: string): void',
++        description: '保存直接目录成员的发现与展示分类；同值调用不追加事件。',
++        parameters: [{ name: 'parent', description: '拥有目录的已准备父会话。' }, { name: 'childId', description: '该目录中的直接成员。' }, { name: 'category', description: '非空分类；work 是缺省分类，未知分类按原值保存。' }],
++        throws: ['{SubagentError} 分类为空、成员不存在或目录投影不可用；失败前不改变目录。'],
++      },
+       {
+         signature: 'rootOf(caller: Agent): Agent',
+         description: 'Resolve the root shared by an Agent and its other agents in its subagent tree.',
+@@ -7480,6 +7486,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
+     name: 'LocalizedText',
+     declaration: 'export type LocalizedText = string | {\n    readonly en: string;\n    readonly [locale: string]: string;\n};',
+   },
++  {
++    name: 'LogEventIntent',
++    declaration: 'export interface LogEventIntent {\n    readonly ignorable?: true;\n    readonly surfaceOp?: never;\n    readonly sourceEventSeqs?: never;\n}',
++  },
+   {
+     name: 'LogExporterOptions',
+     declaration: 'export type LogExporterOptions = Omit<OTLPExporterNodeConfigBase, \'selfObsMeterProvider\'> & {\n    url: string;\n};',
+@@ -8762,7 +8772,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
+   },
+   {
+     name: 'Session',
+-    declaration: 'export class Session {\n    get surface(): SessionSurface;\n    readonly header: SessionHeader;\n    readonly inheritedEventCount: SessionLogOffset;\n    get id(): SessionId;\n    readonly firstLiveSeq: SessionLogOffset;\n    readonly firstLifecycleSeq: SessionLogOffset;\n    static create(id: SessionId, seed?: readonly SessionEvent[], header?: SessionHeader, inheritedEventCount?: SessionLogOffset, projections?: readonly SessionMessageProjection[]): Session;\n    static fromRestore(id: SessionId, seed: readonly SessionEvent[], header: SessionHeader, inheritedEventCount: SessionLogOffset, eventState: SessionSeedEventState, projections?: readonly SessionMessageProjection[]): Session;\n    eventAt(seq: SessionSeq): SessionEvent | undefined;\n    snapshotEvents(fromSeq: SessionLogOffset = SessionLogOffset(0), toSeqExclusive: SessionLogOffset = this.seq): readonly SessionEvent[];\n    ownEvents(): readonly SessionEvent[];\n    isOwnSeq(seq: SessionSeq): boolean;\n    get seq(): SessionLogOffset;\n    get currentBatchPublication(): SessionEvent | undefined;\n    append(inputs: readonly SessionEventInput[]): readonly SessionEvent[];\n    append<T extends SessionEventType>(type: T, data: SessionEventMap[T], ...opts: T extends SurfaceEventType ? [\n        opts: SurfaceIntent<T>\n    ] : [\n    ]): SessionEvent<T>;\n    requestHeader(): EpochHeader | undefined;\n    requestContext(): RequestContext | undefined;\n    toolHistory(): ToolHistory;\n    deriveMessages(): Message[];\n    deriveEventMessage(event:  /* …truncated — full shape in source */',
++    declaration: 'export class Session {\n    get surface(): SessionSurface;\n    readonly header: SessionHeader;\n    readonly inheritedEventCount: SessionLogOffset;\n    get id(): SessionId;\n    readonly firstLiveSeq: SessionLogOffset;\n    readonly firstLifecycleSeq: SessionLogOffset;\n    static create(id: SessionId, seed?: readonly SessionEvent[], header?: SessionHeader, inheritedEventCount?: SessionLogOffset, projections?: readonly SessionMessageProjection[]): Session;\n    static fromRestore(id: SessionId, seed: readonly SessionEvent[], header: SessionHeader, inheritedEventCount: SessionLogOffset, eventState: SessionSeedEventState, projections?: readonly SessionMessageProjection[]): Session;\n    eventAt(seq: SessionSeq): SessionEvent | undefined;\n    snapshotEvents(fromSeq: SessionLogOffset = SessionLogOffset(0), toSeqExclusive: SessionLogOffset = this.seq): readonly SessionEvent[];\n    ownEvents(): readonly SessionEvent[];\n    isOwnSeq(seq: SessionSeq): boolean;\n    get seq(): SessionLogOffset;\n    get currentBatchPublication(): SessionEvent | undefined;\n    append(inputs: readonly SessionEventInput[]): readonly SessionEvent[];\n    append<T extends SessionEventType>(type: T, data: SessionEventMap[T], ...opts: T extends SurfaceEventType ? [\n        opts: SurfaceIntent<T>\n    ] : [\n        opts?: LogEventIntent\n    ]): SessionEvent<T>;\n    requestHeader(): EpochHeader | undefined;\n    requestContext(): RequestContext | undefined;\n    toolHistory(): ToolHistory;\n    deriveMessages(): Message[];\n /* …truncated — full shape in source */',
+   },
+   {
+     name: 'SessionAccess',
+@@ -8870,7 +8880,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
+   },
+   {
+     name: 'SessionEventInput',
+-    declaration: 'export type SessionEventInput = {\n    [K in SessionEventType]: readonly [\n        type: K,\n        data: SessionEventMap[K],\n        ...opts: K extends SurfaceEventType ? [\n            opts: SurfaceIntent<K>\n        ] : [\n        ]\n    ];\n}[SessionEventType];',
++    declaration: 'export type SessionEventInput = {\n    [K in SessionEventType]: readonly [\n        type: K,\n        data: SessionEventMap[K],\n        ...opts: K extends SurfaceEventType ? [\n            opts: SurfaceIntent<K>\n        ] : [\n            opts?: LogEventIntent\n        ]\n    ];\n}[SessionEventType];',
+   },
+   {
+     name: 'SessionEventMap',
+@@ -9726,7 +9736,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
+   },
+   {
+     name: 'SubagentActivationSpec',
+-    declaration: 'export interface SubagentActivationSpec extends Omit<SubagentStartRequest, \'label\' | \'signal\'> {\n    readonly provider: string;\n    readonly label: string;\n    readonly name?: string;\n    readonly childId?: SessionId;\n    readonly signal: AbortSignal;\n    readonly delivery: \'parent\' | \'caller\';\n}',
++    declaration: 'export interface SubagentActivationSpec extends Omit<SubagentStartRequest, \'label\' | \'signal\'> {\n    readonly provider: string;\n    readonly label: string;\n    readonly name?: string;\n    readonly category?: string;\n    readonly childId?: SessionId;\n    readonly signal: AbortSignal;\n    readonly delivery: \'parent\' | \'caller\';\n}',
+   },
+   {
+     name: 'SubagentCapabilities',
+@@ -9734,7 +9744,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
+   },
+   {
+     name: 'SubagentCatalogRow',
+-    declaration: 'export type SubagentCatalogRow = {\n    readonly id: SessionId;\n    readonly activity: \'running\' | \'inactive\';\n} & KnownSubagentCatalogFields;',
++    declaration: 'export type SubagentCatalogRow = {\n    readonly id: SessionId;\n    readonly category?: string;\n    readonly activity: \'running\' | \'inactive\';\n} & KnownSubagentCatalogFields;',
+   },
+   {
+     name: 'SubagentDelivery',
+@@ -9754,7 +9764,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
+   },
+   {
+     name: 'SubagentListEntry',
+-    declaration: 'export type SubagentListEntry = SubagentCatalogRow & {\n    readonly kind: \'child\';\n    readonly hasChildren: boolean;\n} | {\n    readonly kind: \'diagnostic\';\n    readonly id: SessionId;\n    readonly reason: \'corrupt\' | \'unsupported\' | \'unavailable\';\n};',
++    declaration: 'export type SubagentListEntry = SubagentCatalogRow & {\n    readonly kind: \'child\';\n    readonly hasChildren: boolean;\n} | {\n    readonly kind: \'diagnostic\';\n    readonly category?: string;\n    readonly id: SessionId;\n    readonly reason: \'corrupt\' | \'unsupported\' | \'unavailable\';\n};',
+   },
+   {
+     name: 'SubagentMemberNames',
+@@ -9798,7 +9808,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
+   },
+   {
+     name: 'SubagentRuntime',
+-    declaration: 'export class SubagentRuntime extends TypertRemoteService {\n    static Config;\n    static inject;\n    constructor(ctx: Context, private config: Config);\n    resolveMaxDepth(configured?: number | \'provider-managed\'): number | undefined;\n    startActivation(spec: SubagentActivationSpec & {\n        readonly childId: SessionId;\n    }): Promise<SubagentActivation & {\n        readonly messageId: MessageId;\n    }>;\n    startActivation(spec: SubagentActivationSpec): Promise<SubagentActivation>;\n    rootOf(caller: Agent): Agent;\n    namesOf(agent: Agent): SubagentMemberNames;\n    async resolveName(caller: Agent, name: string, signal: AbortSignal): Promise<SessionId>;\n    async waitForTreeWork(root: Agent): Promise<boolean>;\n    async sendMessage(sender: Agent, targetId: SessionId, content: ContentBlock[], options: SubagentSendMessageOptions): Promise<MessageId>;\n    interrupt(targetSessionId: SessionId, authority: SubagentInterruptAuthority): void;\n    async drainDescendants(parents: readonly Agent[]): Promise<void>;\n    listDescendants(rootSessionId: SessionId, signal?: AbortSignal): Promise<SubagentDescendantListEntry[]>;\n    @Remote({ name: \'prompt\', resources: { session: request => request.childSessionId } })\n    async prompt(request: SubagentPromptRequest, signal: AbortSignal): Promise<SubagentPromptReceipt>;\n    @Remote({ name: \'interruptByUser\', resources: { session: childSessionId => childSessionId } })\n    interruptByUser(childSessionId: SessionId): SubagentInterruptReceipt;\n  /* …truncated — full shape in source */',
++    declaration: 'export class SubagentRuntime extends TypertRemoteService {\n    static Config;\n    static inject;\n    constructor(ctx: Context, private config: Config);\n    resolveMaxDepth(configured?: number | \'provider-managed\'): number | undefined;\n    startActivation(spec: SubagentActivationSpec & {\n        readonly childId: SessionId;\n    }): Promise<SubagentActivation & {\n        readonly messageId: MessageId;\n    }>;\n    startActivation(spec: SubagentActivationSpec): Promise<SubagentActivation>;\n    setCategory(parent: Session, childId: SessionId, category: string): void;\n    rootOf(caller: Agent): Agent;\n    namesOf(agent: Agent): SubagentMemberNames;\n    async resolveName(caller: Agent, name: string, signal: AbortSignal): Promise<SessionId>;\n    async waitForTreeWork(root: Agent): Promise<boolean>;\n    async sendMessage(sender: Agent, targetId: SessionId, content: ContentBlock[], options: SubagentSendMessageOptions): Promise<MessageId>;\n    interrupt(targetSessionId: SessionId, authority: SubagentInterruptAuthority): void;\n    async drainDescendants(parents: readonly Agent[]): Promise<void>;\n    listDescendants(rootSessionId: SessionId, signal?: AbortSignal): Promise<SubagentDescendantListEntry[]>;\n    @Remote({ name: \'prompt\', resources: { session: request => request.childSessionId } })\n    async prompt(request: SubagentPromptRequest, signal: AbortSignal): Promise<SubagentPromptReceipt>;\n    @Remote({ name: \'interruptByUser\', resources: { session: childSessionId => childSessionId }  /* …truncated — full shape in source */',
+   },
+   {
+     name: 'SubagentSendMessageOptions',
+diff --git a/packages/subagent/subagent/README.i18n.yaml b/packages/subagent/subagent/README.i18n.yaml
+index d6864b8745..207f28f3d0 100644
+--- a/packages/subagent/subagent/README.i18n.yaml
++++ b/packages/subagent/subagent/README.i18n.yaml
+@@ -27,8 +27,8 @@
+   en: 4b40bd380bea81ce
+   zh: 896a584190981168
+ /deepseek-ai-dsh-subagent/use-this-package/local-and-external-children:
+-  en: d6eef66bc1d293fe
+-  zh: e4754d38212c0b2e
++  en: 1db677cf766e5162
++  zh: a1e0fbcc26c878b6
+ /deepseek-ai-dsh-subagent/use-this-package/agent-names:
+   en: e46a141f9126c45f
+   zh: 15f6011c36baa20c
+diff --git a/packages/subagent/subagent/README.md b/packages/subagent/subagent/README.md
+index a212a1ff72..427219426c 100644
+--- a/packages/subagent/subagent/README.md
++++ b/packages/subagent/subagent/README.md
+@@ -58,7 +58,9 @@ At capacity, creation or cold resume rejects with `ACTIVATION_LIMIT_REACHED` (br
+ 
+ ### Local and external children
+ 
+-`startActivation({ provider, label, name?, prompt, parent, signal, delivery })` returns `{ childId, name, messageId?, result, dispose }`. Supplying `childId` selects a local backend and guarantees `messageId`. Local children accept later messages and can cold-resume; external children expose one execution and reject continuation. `agentOptions` overrides supported child model settings. `delivery: 'parent'` supplies the model-facing completion notice; `delivery: 'caller'` lets workflows await the result without a parent notice or initial return guidance. Local parent delivery requires persistence; caller delivery can use an ephemeral local session. Cold resume requires persistence and Session query.
++`startActivation({ provider, label, name?, category?, prompt, parent, signal, delivery })` returns `{ childId, name, messageId?, result, dispose }`. Supplying `childId` selects a local backend and guarantees `messageId`. Local children accept later messages and can cold-resume; external children expose one execution and reject continuation. `agentOptions` overrides supported child model settings. `delivery: 'parent'` supplies the model-facing completion notice; `delivery: 'caller'` lets workflows await the result without a parent notice or initial return guidance. Local parent delivery requires persistence; caller delivery can use an ephemeral local session. Cold resume requires persistence and Session query.
++
++`category?: string` 控制目录发现与展示，省略时为 `work`；`review` 是审查分类，未知分类保留原值。`setCategory(parent: Session, childId: SessionId, category: string): void` 只接受父目录的直接成员和非空分类，同值调用不追加事件；最新的父会话自有分类事实有效，fork 继承前缀不参与分类。原生首次接受把分类信息与原目录事实在同一批次写入，首个目录视图已带分类。`listDescendants` 保留完整运行树及诊断行分类，模型工作发现排除非 `work` 成员及其下级。分类不改变名称、生命周期或权限。
+ 
+ `rootOf(agent)` resolves a managed local Agent through its existing Activation and checks the exact live child and root instances. Intermediate creators can leave without changing that root; same-id replacements cannot inherit membership. Ordinary live Agents resolve to themselves, while unmanaged delegated Agents are rejected. The query does not activate Sessions.
+ 
+diff --git a/packages/subagent/subagent/README.zh.md b/packages/subagent/subagent/README.zh.md
+index a1f2745150..154fb3117c 100644
+--- a/packages/subagent/subagent/README.zh.md
++++ b/packages/subagent/subagent/README.zh.md
+@@ -58,7 +58,9 @@ kind: "package-reference"
+ 
+ ### 本地与外部子级
+ 
+-`startActivation({ provider, label, name?, prompt, parent, signal, delivery })` 返回 `{ childId, name, messageId?, result, dispose }`。提供 `childId` 会选择本地后端，并保证返回 `messageId`。本地子级接受后续消息并支持冷恢复；外部子级只暴露一次执行，拒绝继续输入。`agentOptions` 覆盖后端支持的子级模型设置。`delivery: 'parent'` 提供面向模型的完成通知；`delivery: 'caller'` 让工作流等待结果，不发送父级通知，也不附加初始返回指导。本地父级投递需要持久化，调用方投递可以使用临时本地会话；冷恢复需要持久化与 Session 查询服务。
++`startActivation({ provider, label, name?, category?, prompt, parent, signal, delivery })` 返回 `{ childId, name, messageId?, result, dispose }`。提供 `childId` 会选择本地后端，并保证返回 `messageId`。本地子级接受后续消息并支持冷恢复；外部子级只暴露一次执行，拒绝继续输入。`agentOptions` 覆盖后端支持的子级模型设置。`delivery: 'parent'` 提供面向模型的完成通知；`delivery: 'caller'` 让工作流等待结果，不发送父级通知，也不附加初始返回指导。本地父级投递需要持久化，调用方投递可以使用临时本地会话；冷恢复需要持久化与 Session 查询服务。
++
++`category?: string` 控制目录发现与展示，省略时为 `work`；`review` 是审查分类，未知分类保留原值。`setCategory(parent: Session, childId: SessionId, category: string): void` 只接受父目录的直接成员和非空分类，同值调用不追加事件；最新的父会话自有分类事实有效，fork 继承前缀不参与分类。原生首次接受把分类信息与原目录事实在同一批次写入，首个目录视图已带分类。`listDescendants` 保留完整运行树及诊断行分类，模型工作发现排除非 `work` 成员及其下级。分类不改变名称、生命周期或权限。
+ 
+ `rootOf(agent)` 通过托管本地 Agent 已有的 Activation 解析树根，并校验子级和树根的确切存活实例。中间创建者退出不改变该树根；同 id 替代实例不能继承成员身份。普通存活 Agent 返回自身，非托管的委派 Agent 会被拒绝。查询不会激活 Session。
+ 
+diff --git a/packages/subagent/subagent/src/catalog.ts b/packages/subagent/subagent/src/catalog.ts
+index 836f725d0a..a37ec96c87 100644
+--- a/packages/subagent/subagent/src/catalog.ts
++++ b/packages/subagent/subagent/src/catalog.ts
+@@ -10,6 +10,7 @@ import type { ChunkedList } from '@deepseek-ai/dsh-chunked-list'
+ import type {
+   Session,
+   SessionEvent,
++  SessionEventInput,
+   SessionHeader,
+   SessionId,
+   SessionLogOffset,
+@@ -43,6 +44,13 @@ export type SubagentCatalogEvent =
+     ))
+   )
+ 
++/** 父会话拥有的目录分类信息；最新自有事实有效，孤立事实不建立成员。 */
++export interface SubagentCatalogCategoryEvent {
++  readonly version: 0
++  readonly childId: SessionId
++  readonly category: string
++}
++
+ declare module '@deepseek-ai/dsh-session/types' {
+   interface SessionEventMap {
+     /**
+@@ -50,6 +58,11 @@ declare module '@deepseek-ai/dsh-session/types' {
+      * @param data - versioned parent-owned catalog entry.
+      */
+     'subagent/catalog': SubagentCatalogEvent
++    /**
++     * 直接目录成员的发现与展示分类，不改变名称、成员关系或权限。
++     * @param data - 带版本的分类信息；以 ignorable: true 写入。
++     */
++    'subagent/catalog-category': SubagentCatalogCategoryEvent
+   }
+ }
+ 
+@@ -57,6 +70,8 @@ declare module '@deepseek-ai/dsh-session/types' {
+ export interface SubagentCatalogState {
+   readonly inheritedEventCount: SessionLogOffset
+   readonly head?: ChunkedList<SubagentCatalogEvent> | undefined
++  /** 每个 childId 的最新分类，允许原生接受批次先写分类再建立成员。 */
++  readonly categories?: Readonly<Record<string, string>> | undefined
+ }
+ 
+ const sessionIdSchema = z.string() as unknown as z.ZodType<SessionId>
+@@ -87,29 +102,40 @@ const eventDataSchema = z.union([
+   namedContinuableCatalogSchema,
+   namedExternalCatalogSchema,
+ ]) as z.ZodType<SubagentCatalogEvent>
++const categorySchema = z.string().refine(value => value.trim().length > 0, '分类不能为空')
++const categoryEventSchema: z.ZodType<SubagentCatalogCategoryEvent> = z.object({
++  version: z.literal(0),
++  childId: sessionIdSchema,
++  category: categorySchema,
++}).strict()
+ const viewSchema = z.array(z.union([
+   oneShotCatalogSchema.omit({ version: true, childId: true, childCreatedAt: true }).extend({
+     id: sessionIdSchema,
++    category: categorySchema.optional(),
+     createdAt: oneShotCatalogSchema.shape.childCreatedAt,
+   }),
+   externalCatalogSchema.omit({ version: true, childId: true, childCreatedAt: true }).extend({
+     id: sessionIdSchema,
++    category: categorySchema.optional(),
+     createdAt: externalCatalogSchema.shape.childCreatedAt,
+     name: nameSchema.optional(),
+   }),
+   continuableCatalogSchema.omit({ version: true, childId: true, childCreatedAt: true }).extend({
+     id: sessionIdSchema,
++    category: categorySchema.optional(),
+     createdAt: continuableCatalogSchema.shape.childCreatedAt,
+     name: nameSchema.optional(),
+   }),
+   unknownCatalogSchema.omit({ version: true, childId: true, childCreatedAt: true }).extend({
+     id: sessionIdSchema,
++    category: categorySchema.optional(),
+     createdAt: unknownCatalogSchema.shape.childCreatedAt,
+   }),
+ ])) as z.ZodType<SubagentCatalogEntry[]>
+ const stateSchema: z.ZodType<SubagentCatalogState> = z.object({
+   inheritedEventCount: z.number().int().nonnegative() as unknown as z.ZodType<SessionLogOffset>,
+   head: chunkedListSchema(eventDataSchema).optional(),
++  categories: z.record(z.string(), categorySchema).optional(),
+ }).strict()
+ 
+ /**
+@@ -121,21 +147,32 @@ function subagentCatalogEntries(state: SubagentCatalogState): SubagentCatalogEnt
+   const entries: SubagentCatalogEntry[] = []
+   for (const data of iterateChunkedList(state.head)) {
+     const { version: _version, childId, childCreatedAt, ...descriptor } = data
+-    entries.push({ id: childId, createdAt: childCreatedAt, ...descriptor })
++    const category = state.categories !== undefined && Object.hasOwn(state.categories, childId)
++      ? state.categories[childId] : undefined
++    entries.push({ id: childId, createdAt: childCreatedAt, ...descriptor,
++      ...category === undefined ? {} : { category },
++    })
+   }
+   return entries
+ }
+ 
+-/** Parent-owned catalog; version-6 checkpoints retain unnamed facts, and invalid own facts reject restoration. */
++/** 父会话自有目录和最新分类；无效自有事实拒绝恢复，fork 前缀不参与分类。 */
+ export const subagentCatalogProjectionDefinition = {
+   key: 'subagentCatalog',
+   stateSchema,
+   init: (_header: SessionHeader, inheritedEventCount: SessionLogOffset) => ({ inheritedEventCount }),
+   apply: (state, event: SessionEvent) => {
+-    if (event.type !== 'subagent/catalog' || event.seq < state.inheritedEventCount) return state
++    if (event.seq < state.inheritedEventCount) return state
++    if (event.type === 'subagent/catalog-category') {
++      const { childId, category } = categoryEventSchema.parse(event.data)
++      if (state.categories !== undefined && Object.hasOwn(state.categories, childId)
++        && state.categories[childId] === category) return state
++      return { ...state, categories: { ...state.categories, [childId]: category } }
++    }
++    if (event.type !== 'subagent/catalog') return state
+     return { ...state, head: appendChunkedList(state.head, eventDataSchema.parse(event.data)) }
+   },
+-  stateVersion: 6,
++  stateVersion: 7,
+   wire: { viewSchema, view: subagentCatalogEntries },
+ } satisfies ProjectionDefinition<'subagentCatalog', SubagentCatalogState>
+ 
+@@ -145,21 +182,23 @@ export const subagentCatalogProjectionDefinition = {
+  * @param child - established child's immutable Session metadata.
+  * @param descriptor - mode-discriminated creation label frozen with the child.
+  * @param name - the child's name, reserved unique among the parent's children.
++ * @param category - 发现与展示分类；缺省 work，其他分类与成员在同一批次保存。
+  */
+ export function establishCatalogChild(
+   parent: Session,
+   child: SessionHeader,
+   descriptor: { readonly mode: 'continuable'; readonly label: string },
+   name: string,
++  category = 'work',
+ ): void {
+-  parent.append('subagent/catalog', {
++  establishCatalogEntry(parent, {
+     version: SUBAGENT_CATALOG_VERSION,
+     childId: child.id,
+     childCreatedAt: child.createdAt,
+     mode: descriptor.mode,
+     label: descriptor.label,
+     name,
+-  })
++  }, category)
+ }
+ 
+ /**
+@@ -168,16 +207,27 @@ export function establishCatalogChild(
+  * @param childId - identity returned by the external provider.
+  * @param label - display label assigned by the caller.
+  * @param name - the child's name, reserved unique among the parent's children.
++ * @param category - 发现与展示分类；缺省 work，其他分类与成员在同一批次保存。
+  */
+-export function establishExternalCatalogChild(parent: Session, childId: SessionId, label: string, name: string): void {
+-  parent.append('subagent/catalog', {
++export function establishExternalCatalogChild(parent: Session, childId: SessionId, label: string, name: string, category = 'work'): void {
++  establishCatalogEntry(parent, {
+     version: SUBAGENT_CATALOG_VERSION,
+     childId,
+     childCreatedAt: Date.now(),
+     mode: 'external',
+     label,
+     name,
+-  })
++  }, category)
++}
++
++/** 原生接受点先保存分类，使逐事件投影首次发布成员时即可读取它。 */
++function establishCatalogEntry(parent: Session, data: SubagentCatalogEvent, category: string): void {
++  const inputs: SessionEventInput[] = []
++  if (category !== 'work') {
++    inputs.push(['subagent/catalog-category', { version: 0, childId: data.childId, category }, { ignorable: true }])
++  }
++  inputs.push(['subagent/catalog', data])
++  parent.append(inputs)
+ }
+ 
+ /**
+diff --git a/packages/subagent/subagent/src/control-types.ts b/packages/subagent/subagent/src/control-types.ts
+index 442526b3d0..ca7d5688ea 100644
+--- a/packages/subagent/subagent/src/control-types.ts
++++ b/packages/subagent/subagent/src/control-types.ts
+@@ -27,6 +27,8 @@ export type SubagentCatalogRow =
+   & {
+     /** The durable child session id, stable across Activations. */
+     readonly id: SessionId
++    /** 最新目录分类；省略为 work，不参与权限判断。 */
++    readonly category?: string
+     /**
+      * Whether recursive catalog listing observed a resident Session. This
+      * does not encode a durable outcome or guarantee continuation delivery.
+@@ -47,6 +49,8 @@ export type SubagentListEntry =
+   }
+   | {
+     readonly kind: 'diagnostic'
++    /** 与普通目录行相同的分类；省略为 work。 */
++    readonly category?: string
+     /** The candidate's session id. */
+     readonly id: SessionId
+     /**
+diff --git a/packages/subagent/subagent/src/index.ts b/packages/subagent/subagent/src/index.ts
+index bb89264e91..77c8115944 100644
+--- a/packages/subagent/subagent/src/index.ts
++++ b/packages/subagent/subagent/src/index.ts
+@@ -39,7 +39,8 @@ import type { Scoped } from '@deepseek-ai/dsh-scope'
+ import { assertObjectJsonSchema } from '@deepseek-ai/dsh-tools'
+ import type { ContentBlock, MessageId } from '@deepseek-ai/dsh-llm'
+ import type { Agent } from '@deepseek-ai/dsh-agent'
+-import type { SessionId } from '@deepseek-ai/dsh-session'
++import type { Session, SessionId } from '@deepseek-ai/dsh-session'
++import type { SubagentCatalogEntry } from './projection-types.ts'
+ import { canonicalClientTimeZone } from '@deepseek-ai/dsh-util-time'
+ import { Remote, RemoteError, TypertRemoteService, principalOf, type Principal } from '@deepseek-ai/dsh-typert-protocol'
+ import {
+@@ -199,6 +200,7 @@ export class SubagentRuntime extends TypertRemoteService {
+   static inject = ['workingDirectory', 'sessionProjections']
+   private providers = new Map<string, SubagentProvider>()
+   private manager: SubagentManager | undefined
++  private catalogOf: ((session: Session) => SubagentCatalogEntry[]) | undefined
+   /**
+    * The contained lifecycle-edge publisher. Built here because scoped dispatch
+    * keys its carrier by this exact service instance, whose own context filter
+@@ -217,10 +219,12 @@ export class SubagentRuntime extends TypertRemoteService {
+     await ctx.sessionProjections.register(subagentTimingProjectionDefinition)
+     const identityProjection = await ctx.sessionProjections.register(subagentIdentityProjectionDefinition)
+     if (ctx.fiber.uid === null) return
++    const catalogOf = (session: Session) => subagentCatalogProjectionDefinition.wire.view(catalogProjection.stateOf(session))
++    this.catalogOf = catalogOf
+     ctx.inject(['agents'], (childCtx: Context) => {
+       const manager = new SubagentManager(childCtx, {
+         identityOf: session => identityProjection.stateOf(session).identity,
+-        catalogOf: session => subagentCatalogProjectionDefinition.wire.view(catalogProjection.stateOf(session)),
++        catalogOf,
+         emitLifecycle: this.emitLifecycle,
+       }, () => this.config.maxActiveSubagents.get())
+       this.manager = manager
+@@ -265,6 +269,7 @@ export class SubagentRuntime extends TypertRemoteService {
+    * @throws PROVIDER_CHANGED if the selected provider is removed or replaced before dispatch.
+    */
+   async startActivation(spec: SubagentActivationSpec): Promise<SubagentActivation> {
++    if (spec.category !== undefined) this.assertCategory(spec.category)
+     const provider = this.expectProvider(spec.provider)
+     if (spec.childId !== undefined && provider.prepareContinuable === undefined) {
+       throw new SubagentError('reserved child ids require a local backend', 'UNSUPPORTED_CAPABILITY')
+@@ -291,6 +296,33 @@ export class SubagentRuntime extends TypertRemoteService {
+     })
+   }
+ 
++  /**
++   * 保存直接目录成员的发现与展示分类；同值调用不追加事件。
++   * @param parent - 拥有目录的已准备父会话。
++   * @param childId - 该目录中的直接成员。
++   * @param category - 非空分类；work 是缺省分类，未知分类按原值保存。
++   * @throws {SubagentError} 分类为空、成员不存在或目录投影不可用；失败前不改变目录。
++   */
++  setCategory(parent: Session, childId: SessionId, category: string): void {
++    this.assertCategory(category)
++    if (this.catalogOf === undefined) {
++      throw new SubagentError('目录分类需要已注册的 subagentCatalog 投影', 'SUBAGENT_CONTROL_PROJECTIONS_UNAVAILABLE')
++    }
++    const child = this.catalogOf(parent).find(entry => entry.id === childId)
++    if (child === undefined) {
++      throw new SubagentError(`子会话 "${childId}" 不是父会话 "${parent.id}" 的直接目录成员`, 'SUBAGENT_CATALOG_MEMBER_NOT_FOUND')
++    }
++    if ((child.category ?? 'work') === category) return
++    parent.append('subagent/catalog-category', { version: 0, childId, category }, { ignorable: true })
++  }
++
++  /** 分类只控制发现与展示，空白值在任何写入前拒绝。 */
++  private assertCategory(category: string): void {
++    if (category.trim().length === 0) {
++      throw new SubagentError('目录分类不能为空', 'SUBAGENT_CATEGORY_INVALID')
++    }
++  }
++
+   /**
+    * Resolve the root shared by an Agent and its other agents in its subagent tree.
+    * @param caller - exact live Agent whose subagent ancestry selects the tree.
+diff --git a/packages/subagent/subagent/src/list-children.ts b/packages/subagent/subagent/src/list-children.ts
+index 41e0b88915..b943ae1b6b 100644
+--- a/packages/subagent/subagent/src/list-children.ts
++++ b/packages/subagent/subagent/src/list-children.ts
+@@ -99,7 +99,9 @@ export async function listDescendants(
+     if (visited.has(entry.id)) continue
+     visited.add(entry.id)
+     const path = joinAgentPath(parentPath, 'name' in entry ? entry.name : undefined)
+-    const at = { parentId, depth, ...path === undefined ? {} : { path } }
++    const at = { parentId, depth, ...path === undefined ? {} : { path },
++      ...entry.category === undefined ? {} : { category: entry.category },
++    }
+     let children: SubagentCatalogEntry[]
+     try {
+       children = entry.mode === 'external' ? [] : await readChildren(entry.id)
+diff --git a/packages/subagent/subagent/src/manager.ts b/packages/subagent/subagent/src/manager.ts
+index 59639cef70..d2129f4a67 100644
+--- a/packages/subagent/subagent/src/manager.ts
++++ b/packages/subagent/subagent/src/manager.ts
+@@ -412,7 +412,7 @@ export class SubagentManager {
+           ancestry.root,
+           () => {
+             this.assertAdmitting(parent)
+-            establishCatalogChild(parent.session, childHeader, descriptor, reservation.name)
++            establishCatalogChild(parent.session, childHeader, descriptor, reservation.name, spec.category)
+           },
+         )
+       })
+@@ -454,7 +454,7 @@ export class SubagentManager {
+     reservation: SiblingNameReservation | undefined,
+     path: string | undefined,
+   ): Promise<SubagentActivation> {
+-    const { provider, delivery, childId: _childId, name: _name, ...request } = spec
++    const { provider, delivery, childId: _childId, name: _name, category: _category, ...request } = spec
+     const parent = request.parent
+     return this.trackStartup(ancestry.root, spec.signal, async (signal) => {
+       let activation: Activation | undefined
+@@ -474,7 +474,7 @@ export class SubagentManager {
+         this.assertAdmitting(parent)
+         signal.throwIfAborted()
+         if (reservation !== undefined) {
+-          establishExternalCatalogChild(parent.session, activation.childId, spec.label, reservation.name)
++          establishExternalCatalogChild(parent.session, activation.childId, spec.label, reservation.name, spec.category)
+         }
+         this.accept(activation)
+         return this.receipt(activation)
+diff --git a/packages/subagent/subagent/src/projection-types.ts b/packages/subagent/subagent/src/projection-types.ts
+index 36ed39b8e1..9adb252634 100644
+--- a/packages/subagent/subagent/src/projection-types.ts
++++ b/packages/subagent/subagent/src/projection-types.ts
+@@ -36,6 +36,8 @@ export type SubagentCatalogEntry =
+   & {
+     readonly id: SessionId
+     readonly createdAt: number
++    /** 最新自有分类事实；省略为 work。 */
++    readonly category?: string
+   }
+   & (
+     | KnownSubagentCatalogFields
+diff --git a/packages/subagent/subagent/src/types.ts b/packages/subagent/subagent/src/types.ts
+index 1786ed8e2e..c16a849506 100644
+--- a/packages/subagent/subagent/src/types.ts
++++ b/packages/subagent/subagent/src/types.ts
+@@ -37,6 +37,8 @@ export interface SubagentActivationSpec extends Omit<SubagentStartRequest, 'labe
+    * Omission selects the first free `agent-N`.
+    */
+   readonly name?: string
++  /** 发现与展示分类；省略为 work，不参与权限或生命周期判断。 */
++  readonly category?: string
+   /** Optional reserved identity for a local child; external backends allocate their own ids. */
+   readonly childId?: SessionId
+   /** Cancellation before publication; callers own later cancellation through dispose. */
+diff --git a/packages/subagent/tool-subagent-control/README.i18n.yaml b/packages/subagent/tool-subagent-control/README.i18n.yaml
+index 36dc72bfa8..1637269640 100644
+--- a/packages/subagent/tool-subagent-control/README.i18n.yaml
++++ b/packages/subagent/tool-subagent-control/README.i18n.yaml
+@@ -30,8 +30,8 @@
+   en: a7d5ecc38bd7a94b
+   zh: 732c5e0ef5abc2a0
+ /deepseek-ai-dsh-tool-subagent-control/use-this-package/list-agents:
+-  en: ed19a95c940c048b
+-  zh: a734ef9e4892b971
++  en: b1c234a283a5a53e
++  zh: 2f732e326dbe35a6
+ /deepseek-ai-dsh-tool-subagent-control/understand-the-implementation:
+   en: c5cdf01a78c990f2
+   zh: 53c180d726ce4502
+diff --git a/packages/subagent/tool-subagent-control/README.md b/packages/subagent/tool-subagent-control/README.md
+index a66d8ce145..9d63a6dadf 100644
+--- a/packages/subagent/tool-subagent-control/README.md
++++ b/packages/subagent/tool-subagent-control/README.md
+@@ -57,7 +57,9 @@ Waits for the exact caller’s next-step inbox. Pending input returns immediatel
+ 
+ ### list_agents
+ 
+-Lists the root and all reachable continuable descendants, including the caller, in stable pre-order. Each row carries a `name`, a `status`, and, for the root and continuable descendants, a `description`. The root is `lead` with the description `root agent`; a descendant's name is its full path from the root and its description is its creation label. A child whose catalog entry has no name, and every descendant below it, is listed by Session id. Live status is `running` or `inactive`. External entries are omitted without reading child Sessions; readable one-shot children remain traversal nodes. Unknown modes and unreadable catalogs produce rows whose status is `unsupported`, `corrupt`, or `unavailable`; the status reports that the row's own descendants could not be read, while the row itself stays an addressable member. Ordinary Session forks lead separate subagent trees.
++按稳定前序列出根与 work 分类下可达的可继续后代。 Each row carries a `name`, a `status`, and, for the root and continuable descendants, a `description`. The root is `lead` with the description `root agent`; a descendant's name is its full path from the root and its description is its creation label. A child whose catalog entry has no name, and every descendant below it, is listed by Session id. Live status is `running` or `inactive`. External entries are omitted without reading child Sessions; readable one-shot children remain traversal nodes. Unknown modes and unreadable catalogs produce rows whose status is `unsupported`, `corrupt`, or `unavailable`; the status reports that the row's own descendants could not be read, while the row itself stays an addressable member. Ordinary Session forks lead separate subagent trees.
++
++目录分类省略时为 `work`。`list_agents` 排除其他分类成员及其整棵下级子树；宿主完整目录仍保留这些成员，消息、取消、名称与权限规则按完整运行树执行。
+ 
+ -----
+ 
+diff --git a/packages/subagent/tool-subagent-control/README.zh.md b/packages/subagent/tool-subagent-control/README.zh.md
+index 2b5a505be5..66dea09413 100644
+--- a/packages/subagent/tool-subagent-control/README.zh.md
++++ b/packages/subagent/tool-subagent-control/README.zh.md
+@@ -57,7 +57,9 @@ kind: "package-reference"
+ 
+ ### list_agents
+ 
+-按稳定前序列出根与所有可达的可继续后代，包括调用方。每行包含 `name`、`status`；根和可继续后代还包含 `description`。根的名称为 `lead`，描述为 `root agent`；后代的名称是其相对根的完整路径，描述是其创建标签。目录条目没有名称的子级及其下所有后代以 Session id 列出。在线状态为 `running` 或 `inactive`。外部条目被省略，且不读取其子 Session；可读的一次性子级仍作为遍历节点。未知模式与不可读目录产生状态为 `unsupported`、`corrupt` 或 `unavailable` 的行；该状态表示这一行自身的后代目录无法读取，该行本身仍可寻址。普通 Session 分叉形成独立的 subagent 树。
++按稳定前序列出根与 work 分类下可达的可继续后代。每行包含 `name`、`status`；根和可继续后代还包含 `description`。根的名称为 `lead`，描述为 `root agent`；后代的名称是其相对根的完整路径，描述是其创建标签。目录条目没有名称的子级及其下所有后代以 Session id 列出。在线状态为 `running` 或 `inactive`。外部条目被省略，且不读取其子 Session；可读的一次性子级仍作为遍历节点。未知模式与不可读目录产生状态为 `unsupported`、`corrupt` 或 `unavailable` 的行；该状态表示这一行自身的后代目录无法读取，该行本身仍可寻址。普通 Session 分叉形成独立的 subagent 树。
++
++目录分类省略时为 `work`。`list_agents` 排除其他分类成员及其整棵下级子树；宿主完整目录仍保留这些成员，消息、取消、名称与权限规则按完整运行树执行。
+ 
+ -----
+ 
+diff --git a/packages/subagent/tool-subagent-control/src/list-agents.ts b/packages/subagent/tool-subagent-control/src/list-agents.ts
+index 7570f455d9..66ca3c0f0f 100644
+--- a/packages/subagent/tool-subagent-control/src/list-agents.ts
++++ b/packages/subagent/tool-subagent-control/src/list-agents.ts
+@@ -1,4 +1,4 @@
+-/** Discover the caller's entire subagent tree; the control plugin owns registration. */
++/** 发现调用者的工作子树；控制插件负责注册，分类不参与权限判断。 */
+ 
+ import type { Context } from '@deepseek-ai/cordis'
+ import { defineTool } from '@deepseek-ai/dsh-tools'
+@@ -45,7 +45,8 @@ export function registerListAgents(ctx: Context): ToolDefinition {
+   const definition = defineTool({
+     name: 'list_agents',
+     description:
+-      'List your entire subagent tree: the root agent and all reachable continuable descendants, including yourself. '
++      '列出子树中的工作 Agent：根 Agent 及可继续执行的 work 分类后代。 '
++      + '其他分类成员及其下级保留在完整运行目录中。 '
+       + 'Rows carry names, descriptions, and status. A descendant\'s name is its path from the root, such as reviewer/checker. '
+       + 'You can message any other agent in the subagent tree. '
+       + 'running means it is working; inactive means no turn is executing; it does not indicate task completion, success, or failure. '
+@@ -84,9 +85,17 @@ export function registerListAgents(ctx: Context): ToolDefinition {
+       }
+       const root = ctx.subagents.rootOf(parent)
+       const entries = await ctx.subagents.listDescendants(root.id, exec.signal)
++      const excluded = new Set<SessionId>()
++      const workEntries = entries.filter((entry) => {
++        if (excluded.has(entry.parentId) || (entry.category ?? 'work') !== 'work') {
++          excluded.add(entry.id)
++          return false
++        }
++        return true
++      })
+       return [
+         { name: ROOT_AGENT_NAME, status: statusOf(ctx.agents, root.id), description: 'root agent' },
+-        ...entries
++        ...workEntries
+           .map(entry => project(ctx.agents, entry))
+           .filter(entry => entry !== undefined),
+       ]

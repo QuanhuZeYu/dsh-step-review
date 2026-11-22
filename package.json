@@ -1,6 +1,6 @@
 {
   "name": "dsh-step-review",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "在模型响应交付前按规则审查，拒绝后将建议反馈给原会话订正。",
   "type": "module",
   "main": "./lib/index.js",
@@ -12,6 +12,10 @@
     },
     "./client": {
       "default": "./lib/client.js"
+    },
+    "./reviewer-preset": {
+      "types": "./lib/reviewer-preset.d.ts",
+      "default": "./lib/reviewer-preset.js"
     },
     "./package.json": "./package.json"
   },
@@ -39,10 +43,20 @@
     "@deepseek-ai/cordis": "~4.1.0",
     "@deepseek-ai/dsh-agent": "0.2.2-rc.5",
     "@deepseek-ai/dsh-llm": "0.2.2-rc.5",
-    "@deepseek-ai/dsh-settings": "0.2.2-rc.5"
+    "@deepseek-ai/dsh-settings": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-agent-preset-registry": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-scope": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-subagent": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-session": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-session-query": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-fs": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-tools": "0.2.2-rc.5"
   },
   "dependencies": {
-    "@deepseek-ai/schemastery": "~3.19.0"
+    "@deepseek-ai/schemastery": "~3.19.0",
+    "@deepseek-ai/dsh-tool-fs": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-tool-fs-search": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-tool-executor-native": "0.2.2-rc.5"
   },
   "devDependencies": {
     "@types/node": "^22.20.0",

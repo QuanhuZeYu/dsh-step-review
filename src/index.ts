@@ -8,12 +8,15 @@ import { Config, snapshot } from './config.js'
 import type { LiveConfig } from './config.js'
 import { matchRules } from './matcher.js'
 import { reviewCandidate } from './reviewer.js'
+import { registerReviewCatalog } from './review-catalog.js'
+import { reviewCoordinator, verifyEvidence, type ReviewEvidence } from './review-coordinator.js'
+import './reviewer-preset.js'
 import { ReviewError, safeErrorMessage } from './failure.js'
 import type { Candidate, RuleVerdict, ReviewRecord } from './types.js'
 
 export { Config }
 export const name = 'step-review'
-export const inject = ['llm', 'agents']
+export const inject = ['llm', 'agents', 'subagents', 'agentPresets']
 const REJECTED = 'STEP_REVIEW_REJECTED'
 const FAILED = 'STEP_REVIEW_FAILED'
 
@@ -42,7 +45,11 @@ function feedback(pending: Pending, stopped: boolean): string {
   return parts.join('\n\n')
 }
 
-export function apply(ctx: Context, config: LiveConfig): void {
+export async function apply(ctx: Context, config: LiveConfig): Promise<void> {
+  const coordinator = reviewCoordinator(ctx)
+  coordinator.retain(ctx)
+  await coordinator.ensurePreset(ctx)
+  registerReviewCatalog(ctx)
   const lifetime = new AbortController()
   const active = new Set<Agent>()
   const pending = new WeakMap<Agent, Pending>()
@@ -56,6 +63,7 @@ export function apply(ctx: Context, config: LiveConfig): void {
   })
 
   ctx.on('llm/stream', (request, next) => {
+    if (request.sessionId !== undefined && coordinator.runs.has(request.sessionId)) return next()
     if (!isAgentLoopRequest(request)) return next()
     const settings = snapshot(config)
     if (!settings.enabled) return next()
@@ -71,6 +79,7 @@ export function apply(ctx: Context, config: LiveConfig): void {
         let failure: Pending | undefined
         let bytes = 0
         let finished = false
+        let phase = '主响应缓冲'
         try {
           signal.throwIfAborted()
           for await (const chunk of next()) {
@@ -94,21 +103,29 @@ export function apply(ctx: Context, config: LiveConfig): void {
             text: blocks.filter(b => b.type === 'text').map(b => b.text).join(''),
             tools: blocks.filter(b => b.type === 'tool-call').map(b => ({ name: b.name, arguments: b.arguments })),
           }
+          phase = '机械匹配'
           const matched = await matchRules(settings.rules, candidate, signal)
           const results: RuleVerdict[] = []
+          const evidence: ReviewEvidence[] = []
           for (const rule of matched) {
             signal.throwIfAborted()
-            results.push({ ruleId: rule.id, verdict: await reviewCandidate(ctx, settings, rule, candidate, request, signal) })
+            phase = '规则 ' + JSON.stringify(rule.id) + ' 的子 Agent 审查'
+            const outcome = await reviewCandidate(ctx, settings, rule, candidate, request, signal)
+            results.push({ ruleId: rule.id, verdict: outcome.verdict, reviewerSessionId: outcome.reviewerSessionId })
+            evidence.push(...outcome.evidence)
           }
           signal.throwIfAborted()
           if (results.some(r => r.verdict.decision === 'reject')) failure = { candidate, results, maxCorrections: settings.maxCorrections }
           else {
+            phase = '取证文件版本复核'
+            await verifyEvidence(evidence, signal)
+            signal.throwIfAborted()
             for (const chunk of chunks) { signal.throwIfAborted(); yield chunk }
             return
           }
         } catch (error) {
           if (signal.aborted) throw signal.reason
-          failure = { candidate, results: [], error: safeErrorMessage(error), maxCorrections: settings.maxCorrections }
+          failure = { candidate, results: [], error: phase + '：' + safeErrorMessage(error), maxCorrections: settings.maxCorrections }
         }
         if (!failure) throw new ReviewError('逐步骤审查缺少终态')
         pending.set(agent, failure)

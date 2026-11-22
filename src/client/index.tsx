@@ -4,6 +4,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
 import type { ModelCatalog } from '@deepseek-ai/dsh-api-remotes/client'
+import type { AgentPresetRoster } from '@deepseek-ai/dsh-agent-preset-registry/types'
 import type {} from '@deepseek-ai/dsh-client-ui-model-selection/client'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
@@ -21,13 +22,16 @@ import type { Rule, StepReviewSettings } from '../types.js'
 
 export const name = 'step-review-settings'
 export const inject = ['slots', 'configForms', 'settingsSchema', 'remote', 'remote.session', 'uiConversation']
-// 新客户端可能先于服务端模块更新，旧描述不会包含输出上限。
-type SettingsFormValue = Omit<StepReviewSettings, 'maxReviewTokens'> & { maxReviewTokens?: number }
+// 新客户端可能先于服务端模块更新，旧描述不会包含新增字段。
+type OptionalSettings = 'reviewerPreset' | 'maxReviewSteps' | 'maxReviewTokens'
+type SettingsFormValue = Omit<StepReviewSettings, OptionalSettings> & Partial<Pick<StepReviewSettings, OptionalSettings>>
 
 function formValue(value: SettingsFormValue): StepReviewSettings {
-  return structuredClone({ ...defaults, ...value, maxReviewTokens: value.maxReviewTokens ?? defaults.maxReviewTokens })
+  return structuredClone({ ...defaults, ...value, reviewerPreset: value.reviewerPreset ?? defaults.reviewerPreset,
+    maxReviewSteps: value.maxReviewSteps ?? defaults.maxReviewSteps, maxReviewTokens: value.maxReviewTokens ?? defaults.maxReviewTokens })
 }
 function validation(value: SettingsFormValue, issues: RuleIssues[]): string {
+  if (!value.reviewerPreset?.trim()) return '填写审查 Agent 的 preset id。'
   for (const [index, rule] of value.rules.entries()) {
     const first = Object.values(issues[index])[0]
     if (first) return (rule.id || '未命名规则') + '：' + first
@@ -49,6 +53,8 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<SettingsFor
   const [catalogLoading, setCatalogLoading] = useState(true)
   const [catalogMessage, setCatalogMessage] = useState('')
   const [catalogVersion, setCatalogVersion] = useState(0)
+  const [presets, setPresets] = useState<AgentPresetRoster>()
+  const [presetMessage, setPresetMessage] = useState('正在读取 preset 目录…')
   const [resetRules, setResetRules] = useState(false)
   const ruleKeys = useRef<string[]>([])
   const newRules = useRef(new Set<string>())
@@ -66,6 +72,16 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<SettingsFor
       setCatalog(result.value)
       setCatalogMessage(result.value.failures.length ? '部分提供方读取失败，可刷新或手动填写。' : '')
     }).catch(() => { if (active) setCatalogMessage('模型列表读取失败，可刷新或手动填写。') }).finally(() => { if (active) setCatalogLoading(false) })
+    return () => { active = false }
+  }, [ctx, catalogVersion])
+  useEffect(() => {
+    let active = true
+    void Promise.resolve().then(() => ctx.remote.agentPresets.list()).then(result => {
+      if (!active) return
+      if (!result.ok) { setPresetMessage('preset 目录不可用，请填写已配置的 preset id。'); return }
+      setPresets(result.value)
+      setPresetMessage(result.value.presets.some(item => !item.broken) ? '可从原生目录选择或直接填写 preset id。' : '目录中没有可用 preset，请填写已配置的 preset id。')
+    }).catch(() => { if (active) setPresetMessage('preset 目录读取失败，请填写已配置的 preset id。') })
     return () => { active = false }
   }, [ctx, catalogVersion])
   if (remote.status !== 'ready' || !draft) return <p>正在等待逐步骤审查配置；请确认服务端插件已启用。</p>
@@ -112,9 +128,15 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<SettingsFor
       <h3>基本设置</h3>
       <div className={css.switchRow}><div className={css.switchText}><span>启用审查</span><p className={css.hint}>通过后发布回复并执行工具。</p></div>
         <Switch checked={draft.enabled} disabled={disabled} label='启用审查' onChange={enabled => edit({ enabled })} /></div>
+      <label className={css.field}><span>审查 Agent preset id</span>
+        <Input className={css.input} disabled={disabled} value={draft.reviewerPreset ?? defaults.reviewerPreset} maxLength={200} list='step-review-presets'
+          placeholder='例如 step-review-reader' onChange={event => edit({ reviewerPreset: event.target.value })} />
+        <datalist id='step-review-presets'>{presets?.presets.filter(item => !item.broken).map(item => <option key={item.id} value={item.id}>{item.name || item.id}</option>)}</datalist>
+        <span className={css.hint}>{presetMessage} 默认 step-review-reader 只读取证；preset 仅决定工具与权限，审查模型在下方单独配置。</span>
+      </label>
       <RouteEditor {...modelProps} provider={draft.provider} model={draft.model} reasoningEffort={draft.reasoningEffort}
         onChange={(provider, model, reasoningEffort) => edit({ provider, model, reasoningEffort })} />
-      <div className={css.actions}><Button size='sm' disabled={catalogLoading || saving} onClick={() => setCatalogVersion(v => v + 1)}>刷新模型列表</Button><span className={css.hint} role='status'>{catalogMessage}</span></div>
+      <div className={css.actions}><Button size='sm' disabled={catalogLoading || saving} onClick={() => setCatalogVersion(v => v + 1)}>刷新模型与 preset 目录</Button><span className={css.hint} role='status'>{catalogMessage}</span></div>
     </section>
     <section className={css.section} aria-label='审查规则'>
       <div className={css.sectionHeader}><div className={css.header}><h3>审查规则</h3><p className={css.hint}>展开规则以编辑匹配条件、提示词和审查模型。</p></div><Button variant='outline' size='sm' disabled={disabled || draft.rules.length >= 16} onClick={addRule}>添加规则</Button></div>
@@ -131,20 +153,21 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<SettingsFor
       <SettingsDisclosure title='高级设置'>
         <div className={css.columns}>
           <label className={css.field}><span>审查超时（毫秒）</span><Input className={css.input} disabled={disabled} type='number' min={100} max={300000} step={1} value={draft.timeoutMs} onChange={event => edit({ timeoutMs: event.target.valueAsNumber })} /></label>
+          <label className={css.field}><span>单次审查 Agent 步骤上限</span><Input className={css.input} disabled={disabled} type='number' min={1} max={64} step={1} value={draft.maxReviewSteps ?? defaults.maxReviewSteps} onChange={event => edit({ maxReviewSteps: event.target.valueAsNumber })} /></label>
           <label className={css.field}><span>单步骤自动订正次数</span><Input className={css.input} disabled={disabled} type='number' min={0} max={10} step={1} value={draft.maxCorrections} onChange={event => edit({ maxCorrections: event.target.valueAsNumber })} /></label>
         </div>
-        <label className={css.field}><span>审查输出上限（token）</span>
+        <label className={css.field}><span>每次审查响应上限（token）</span>
           <Input className={css.input} disabled={disabled} type='number' min={1} max={reviewTokenLimit} step={1}
             value={Number.isNaN(budget) ? '' : budget} onChange={event => edit({ maxReviewTokens: event.target.valueAsNumber })} />
-          <span className={css.hint}>默认 {defaultBudget.toLocaleString('en-US')} token。仅用于审查模型，填写值应符合提供方支持的输出上限。</span>
+          <span className={css.hint}>默认 {defaultBudget.toLocaleString('en-US')} token。限制审查 Agent 每次模型响应，填写值应符合提供方支持的输出上限。</span>
         </label>
         {!budgetSupported && <p className={css.hint}>当前服务端尚未提供此设置；可编辑草稿，保存输出上限前请先通过插件管理器加载新版插件。</p>}
         {schema && ctx.settingsSchema.nodeAtPath(schema, ['retryReviewTokens']) &&
-          <p className={css.hint}>当前服务端仍使用旧版重试逻辑，重新加载新版服务端插件后才会改为单次审查。</p>}
+          <p className={css.hint}>当前服务端仍使用旧版重试逻辑，重新加载新版服务端插件后才会使用审查 Agent。</p>}
         <div className={css.switchRow}><div className={css.switchText}><span>提供最近一条用户请求</span><p className={css.hint}>向审查器补充本次任务的上下文。</p></div><Switch checked={draft.includeUserRequest} disabled={disabled} label='提供最近一条用户请求' onChange={includeUserRequest => edit({ includeUserRequest })} /></div>
         <div className={css.columns}>
           <label className={css.field}><span>响应缓冲上限（字节）</span><Input className={css.input} disabled={disabled} type='number' min={1024} max={16777216} step={1} value={draft.maxResponseBytes} onChange={event => edit({ maxResponseBytes: event.target.valueAsNumber })} /></label>
-          <label className={css.field}><span>审查材料上限（字符）</span><Input className={css.input} disabled={disabled} type='number' min={1000} max={200000} step={1} value={draft.maxReviewChars} onChange={event => edit({ maxReviewChars: event.target.valueAsNumber })} /></label>
+          <label className={css.field}><span>审查材料与取证结果累计上限（字符）</span><Input className={css.input} disabled={disabled} type='number' min={1000} max={200000} step={1} value={draft.maxReviewChars} onChange={event => edit({ maxReviewChars: event.target.valueAsNumber })} /></label>
         </div>
       </SettingsDisclosure>
     </section>

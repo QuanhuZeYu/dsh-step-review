@@ -2,13 +2,13 @@ import { Worker } from 'node:worker_threads'
 import type { Candidate, Rule } from './types.js'
 import { ReviewError } from './failure.js'
 
-/** 正则匹配在独立 worker 中运行，异常及超时阻止候选放行。 */
+/** 正则 worker 仅执行内置代码，不继承宿主的模块模式、调试器或加载器参数。 */
 function regexMatches(patterns: string[], subject: string, signal: AbortSignal): Promise<boolean> {
   signal.throwIfAborted()
   return new Promise((resolve, reject) => {
     const worker = new Worker(
       'const {parentPort,workerData}=require("node:worker_threads");try{parentPort.postMessage({match:workerData.patterns.some(p=>new RegExp(p,"iu").test(workerData.subject))})}catch(e){parentPort.postMessage({error:e.message})}',
-      { eval: true, workerData: { patterns, subject }, resourceLimits: { maxOldGenerationSizeMb: 64 } },
+      { eval: true, execArgv: [], workerData: { patterns, subject }, resourceLimits: { maxOldGenerationSizeMb: 64 } },
     )
     let settled = false
     const finish = (error?: Error, match = false) => {
@@ -23,7 +23,7 @@ function regexMatches(patterns: string[], subject: string, signal: AbortSignal):
     const timer = setTimeout(() => finish(new ReviewError('规则正则匹配超过期限')), 1000)
     signal.addEventListener('abort', abort, { once: true })
     worker.once('message', (result: { match?: boolean; error?: string }) => finish(result.error ? new ReviewError('规则正则表达式无效') : undefined, result.match))
-    worker.once('error', error => finish(error))
+    worker.once('error', () => finish(new ReviewError('正则匹配 worker 启动或执行失败，请核对 Node.js 运行环境')))
     worker.once('exit', code => { if (!settled) finish(new ReviewError('规则匹配 worker 提前退出：' + code)) })
     if (signal.aborted) abort()
   })

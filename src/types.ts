@@ -15,7 +15,9 @@ export interface StepReviewSettings {
   provider: string
   model: string
   reasoningEffort?: string | null
+  reviewerPreset: string
   timeoutMs: number
+  maxReviewSteps: number
   maxReviewTokens: number
   maxCorrections: number
   maxResponseBytes: number
@@ -32,7 +34,7 @@ export interface Verdict {
   reason: string
   suggestions: string[]
 }
-export interface RuleVerdict { ruleId: string; verdict: Verdict }
+export interface RuleVerdict { ruleId: string; verdict: Verdict; reviewerSessionId?: string }
 /** 与一次订正注入同时保存的展示数据；工具参数仅为记录。 */
 export interface ReviewRecord {
   version: 1
