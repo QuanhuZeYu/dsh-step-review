@@ -1,6 +1,6 @@
 import z from '@deepseek-ai/schemastery'
 import type { Volatile } from '@deepseek-ai/cordis'
-import { defaults, reviewTokenLimit } from './defaults.js'
+import { defaults } from './defaults.js'
 import type { StepReviewSettings } from './types.js'
 
 /** Loader 的 live 引用，单次主请求开始时读取快照。 */
@@ -21,11 +21,8 @@ export const Config = z.object({
   reviewerPreset: z.string().min(1).max(200).default(defaults.reviewerPreset).description('审查 Agent preset id').volatile(),
   timeoutMs: z.number().step(1).min(100).max(300000).default(defaults.timeoutMs).description('单次审查 Agent 的总期限（毫秒）').volatile(),
   maxReviewSteps: z.number().step(1).min(1).max(64).default(defaults.maxReviewSteps).description('单次审查 Agent 的步骤上限').volatile(),
-  maxReviewTokens: z.number().step(1).min(1).max(reviewTokenLimit).default(defaults.maxReviewTokens).description('审查 Agent 每次响应的 token 上限').volatile(),
   maxCorrections: z.number().step(1).min(0).max(10).default(defaults.maxCorrections).description('单步骤自动订正次数').volatile(),
-  maxResponseBytes: z.number().step(1).min(1024).max(16777216).default(defaults.maxResponseBytes).description('完整响应缓冲字节上限').volatile(),
-  maxReviewChars: z.number().step(1).min(1000).max(200000).default(defaults.maxReviewChars).description('单次审查初始材料与取证结果累计字符上限').volatile(),
-  includeUserRequest: z.boolean().default(false).description('向审查器提供最近一条用户请求（最多 4000 字符）').volatile(),
+  includeUserRequest: z.boolean().default(false).description('向审查器提供最近一条完整用户请求').volatile(),
   rules: z.array(rule).max(16).default(defaults.rules).description('机械匹配与审查规则').volatile(),
 })
 export function snapshot(config: LiveConfig): StepReviewSettings {

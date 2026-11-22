@@ -12,7 +12,7 @@
 适用于 DSH 0.2.2-rc.5 的 Web 界面和 Node.js 24.9 或以上版本。从 [GitHub Releases](https://github.com/QuanhuZeYu/dsh-step-review/releases) 获取已构建的安装包：
 
 ~~~sh
-dsh plugin --profile web add https://github.com/QuanhuZeYu/dsh-step-review/releases/download/v0.2.0/dsh-step-review-0.2.0.tgz
+dsh plugin --profile web add https://github.com/QuanhuZeYu/dsh-step-review/releases/download/v0.2.1/dsh-step-review-0.2.1.tgz
 ~~~
 
 安装或升级均可使用上面的命令。安装后在 DSH Web 的「插件 → 逐步骤审查」打开配置。插件加载遵循 DSH 原生热更新流程；若宿主报告需要重启，再按提示处理。
@@ -23,9 +23,7 @@ dsh plugin --profile web add https://github.com/QuanhuZeYu/dsh-step-review/relea
 
 审查默认关闭。插件自动注册默认 preset `step-review-reader`，提供 `read`、`grep`、`glob` 取证工具和结构化裁决工具。自定义 preset 自行定义工具与权限，审查模型由下方模型设置独立指定。审查子会话独立运行，在支持目录分类的宿主中进入单独的“审查”入口，工作子 Agent 列表保留工作任务。新审查使用 review 分类和独立名称前缀；历史身份可确认时自动回填分类。spawn 后主候选等待裁决；超时、故障或达到订正上限时停止当前回合并留下反馈。
 
-「高级设置」可调整单次审查 Agent 的总期限（默认 120000 毫秒）和步骤上限（默认 12，范围 1–64）。已有超时覆盖值继续生效。`maxReviewTokens` 默认 16384，是审查 Agent 每次模型响应的输出上限；请按提供方支持范围调整。
-
-取证结果超过剩余材料预算时，工具会提示审查 Agent 缩小读取窗口或聚焦搜索；无法完整取证时返回拒绝及订正建议。总期限、步骤和输出上限继续约束整个审查过程。
+「高级设置」可调整单次审查 Agent 的总期限（默认 120000 毫秒）和步骤上限（默认 12，范围 1–64）。已有超时覆盖值继续生效。审查输出沿用所选模型的原生设置，取证沿用原生工具行为；插件不再设置输出 token、响应缓冲或累计材料上限。旧配置中的容量字段不再参与运行。
 
 模型与推理等级可按规则覆盖。规则继承模型时沿用全局推理等级；自选模型时使用该模型的提供方默认等级。显式选择“提供方默认”会保留为 `null`，空值沿用继承语义。
 

@@ -18,10 +18,7 @@ export interface StepReviewSettings {
   reviewerPreset: string
   timeoutMs: number
   maxReviewSteps: number
-  maxReviewTokens: number
   maxCorrections: number
-  maxResponseBytes: number
-  maxReviewChars: number
   includeUserRequest: boolean
   rules: Rule[]
 }

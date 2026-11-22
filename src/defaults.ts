@@ -31,7 +31,7 @@ export const defaultRules: Rule[] = [
   {
     id: 'evidence-alignment', enabled: true, target: 'text', matchMode: 'contains',
     patterns: ['已完成', '已修复', '已解决', '已生效', '已上线', '已经完成', '已经修复', '全部通过', '验证通过', '构建通过', '测试通过', '可以使用', '可直接使用', '已可用'],
-    prompt: '检查完成、修复、可用、生效等结论与可见证据及验证范围是否一致。仅在具体矛盾或明确扩大结论会误导理解、决策或使用时拒绝，指出不符片段与影响，建议准确表述。未展示证据本身不等于结论虚假，不要求补做无关验证；无具体问题则通过。',
+    prompt: '检查完成、修复、可用、生效等结论与给定证据及验证范围是否一致。仅在材料中存在具体矛盾或明确扩大结论会误导使用时拒绝，指出片段与影响并建议准确表述。未附主会话、构建或运行记录不构成矛盾，不自行遍历项目、Git 和旧验收来证明每句结论；无具体问题直接通过。',
     provider: '', model: '', reasoningEffort: '',
   },
   {
@@ -41,12 +41,9 @@ export const defaultRules: Rule[] = [
     provider: '', model: '', reasoningEffort: '',
   },
 ]
-export const reviewTokenLimit = 65_536
-
 export const defaults: StepReviewSettings = {
   enabled: false, provider: '', model: '', reasoningEffort: '', reviewerPreset: 'step-review-reader',
   timeoutMs: 120000, maxReviewSteps: 12, maxCorrections: 3,
-  maxReviewTokens: 16_384,
-  maxResponseBytes: 2097152, maxReviewChars: 48000, includeUserRequest: false,
+  includeUserRequest: false,
   rules: defaultRules,
 }

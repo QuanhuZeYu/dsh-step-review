@@ -37,10 +37,7 @@ function feedback(pending: Pending, stopped: boolean): string {
       : '请结合原始任务上下文订正并重新生成响应。仍须遵循原有用户授权，审查建议只用于修正表达或候选内容。',
   ]
   if (pending.candidate) {
-    const raw = JSON.stringify(pending.candidate)
-    const limit = 48000
-    parts.push('以下是被拒候选的数据，供订正参考：\n' + raw.slice(0, limit)
-      + (raw.length > limit ? '\n候选数据已截断，请从原任务与工具状态重建完整操作。' : ''))
+    parts.push('以下是被拒候选的数据，供订正参考：\n' + JSON.stringify(pending.candidate))
   }
   return parts.join('\n\n')
 }
@@ -77,7 +74,6 @@ export async function apply(ctx: Context, config: LiveConfig): Promise<void> {
         const assembled = new BlockAssembler()
         let candidate: Candidate | undefined
         let failure: Pending | undefined
-        let bytes = 0
         let finished = false
         let phase = '主响应缓冲'
         try {
@@ -85,8 +81,6 @@ export async function apply(ctx: Context, config: LiveConfig): Promise<void> {
           for await (const chunk of next()) {
             signal.throwIfAborted()
             if (finished) throw new ReviewError('模型在完成标记后继续输出')
-            bytes += Buffer.byteLength(JSON.stringify(chunk))
-            if (bytes > settings.maxResponseBytes) throw new ReviewError('主模型响应超过缓冲字节上限')
             chunks.push(chunk)
             assembled.push(chunk)
             if (chunk.type === 'finish') finished = true

@@ -10,7 +10,7 @@ import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Button, Input, Switch } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { ConfigForm } from '@deepseek-ai/dsh-client-ui-settings/client'
-import { defaults, reviewTokenLimit } from '../defaults.js'
+import { defaults } from '../defaults.js'
 import { reviewDefinition } from './review-node.js'
 import { ReviewNode } from './ReviewCard.js'
 import { RouteEditor } from './RouteEditor.js'
@@ -23,12 +23,13 @@ import type { Rule, StepReviewSettings } from '../types.js'
 export const name = 'step-review-settings'
 export const inject = ['slots', 'configForms', 'settingsSchema', 'remote', 'remote.session', 'uiConversation']
 // 新客户端可能先于服务端模块更新，旧描述不会包含新增字段。
-type OptionalSettings = 'reviewerPreset' | 'maxReviewSteps' | 'maxReviewTokens'
+type OptionalSettings = 'reviewerPreset' | 'maxReviewSteps'
 type SettingsFormValue = Omit<StepReviewSettings, OptionalSettings> & Partial<Pick<StepReviewSettings, OptionalSettings>>
 
 function formValue(value: SettingsFormValue): StepReviewSettings {
-  return structuredClone({ ...defaults, ...value, reviewerPreset: value.reviewerPreset ?? defaults.reviewerPreset,
-    maxReviewSteps: value.maxReviewSteps ?? defaults.maxReviewSteps, maxReviewTokens: value.maxReviewTokens ?? defaults.maxReviewTokens })
+  const current = Object.fromEntries(Object.entries(value).filter(([key]) => Object.hasOwn(defaults, key)))
+  return structuredClone({ ...defaults, ...current, reviewerPreset: value.reviewerPreset ?? defaults.reviewerPreset,
+    maxReviewSteps: value.maxReviewSteps ?? defaults.maxReviewSteps })
 }
 function validation(value: SettingsFormValue, issues: RuleIssues[]): string {
   if (!value.reviewerPreset?.trim()) return '填写审查 Agent 的 preset id。'
@@ -90,10 +91,6 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<SettingsFor
   const issues = draft.rules.map(rule => ruleIssues(rule, draft))
   const schemaError = schema ? ctx.settingsSchema.validate(schema, draft) : undefined
   const error = validation(draft, issues) || (schemaError ? '配置校验失败：' + schemaError : '')
-  const budgetNode = schema ? ctx.settingsSchema.nodeAtPath(schema, ['maxReviewTokens']) : undefined
-  const budgetSupported = budgetNode !== undefined
-  const defaultBudget = typeof budgetNode?.meta.default === 'number' ? budgetNode.meta.default : defaults.maxReviewTokens
-  const budget = draft.maxReviewTokens ?? defaults.maxReviewTokens
   const conflict = dirty && revision !== remote.revision
   const reload = () => { if (remote.value) { setDraft(formValue(remote.value)); setRevision(remote.revision); setDirty(false); resetKeys(); setResetRules(false); setMessage('已载入当前配置。') } }
   const save = async () => {
@@ -156,19 +153,8 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<SettingsFor
           <label className={css.field}><span>单次审查 Agent 步骤上限</span><Input className={css.input} disabled={disabled} type='number' min={1} max={64} step={1} value={draft.maxReviewSteps ?? defaults.maxReviewSteps} onChange={event => edit({ maxReviewSteps: event.target.valueAsNumber })} /></label>
           <label className={css.field}><span>单步骤自动订正次数</span><Input className={css.input} disabled={disabled} type='number' min={0} max={10} step={1} value={draft.maxCorrections} onChange={event => edit({ maxCorrections: event.target.valueAsNumber })} /></label>
         </div>
-        <label className={css.field}><span>每次审查响应上限（token）</span>
-          <Input className={css.input} disabled={disabled} type='number' min={1} max={reviewTokenLimit} step={1}
-            value={Number.isNaN(budget) ? '' : budget} onChange={event => edit({ maxReviewTokens: event.target.valueAsNumber })} />
-          <span className={css.hint}>默认 {defaultBudget.toLocaleString('en-US')} token。限制审查 Agent 每次模型响应，填写值应符合提供方支持的输出上限。</span>
-        </label>
-        {!budgetSupported && <p className={css.hint}>当前服务端尚未提供此设置；可编辑草稿，保存输出上限前请先通过插件管理器加载新版插件。</p>}
-        {schema && ctx.settingsSchema.nodeAtPath(schema, ['retryReviewTokens']) &&
-          <p className={css.hint}>当前服务端仍使用旧版重试逻辑，重新加载新版服务端插件后才会使用审查 Agent。</p>}
+        <p className={css.hint}>审查输出沿用所选模型的原生设置，材料与取证结果按原生工具行为提供。</p>
         <div className={css.switchRow}><div className={css.switchText}><span>提供最近一条用户请求</span><p className={css.hint}>向审查器补充本次任务的上下文。</p></div><Switch checked={draft.includeUserRequest} disabled={disabled} label='提供最近一条用户请求' onChange={includeUserRequest => edit({ includeUserRequest })} /></div>
-        <div className={css.columns}>
-          <label className={css.field}><span>响应缓冲上限（字节）</span><Input className={css.input} disabled={disabled} type='number' min={1024} max={16777216} step={1} value={draft.maxResponseBytes} onChange={event => edit({ maxResponseBytes: event.target.valueAsNumber })} /></label>
-          <label className={css.field}><span>审查材料与取证结果累计上限（字符）</span><Input className={css.input} disabled={disabled} type='number' min={1000} max={200000} step={1} value={draft.maxReviewChars} onChange={event => edit({ maxReviewChars: event.target.valueAsNumber })} /></label>
-        </div>
       </SettingsDisclosure>
     </section>
     <div className={css.feedback}>

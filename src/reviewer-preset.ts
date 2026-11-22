@@ -9,8 +9,6 @@ import * as SearchTools from '@deepseek-ai/dsh-tool-fs-search'
 import * as NativeExecutor from '@deepseek-ai/dsh-tool-executor-native'
 
 export const REVIEWER_PRESET_ID = 'step-review-reader'
-export const REVIEWER_READ_LIMIT = 200
-export const REVIEWER_READ_MAX_BYTES = 16384
 
 /** 由主插件注册，确保已有安装在重新加载时也能取得默认审查组合。 */
 export const reviewerPresetDefinition: PresetDefinition = {
@@ -33,8 +31,7 @@ const executableTools = new Set([...readTools, 'structured_output'])
 export async function apply(ctx: Context): Promise<void> {
   if (scopeOf(ctx) === undefined) throw new Error('审查能力模块需要挂载在 Agent preset 作用域内')
 
-  await ctx.plugin(FileTools, { read: true, readImage: false, write: false, edit: false, applyPatch: false,
-    readLimit: REVIEWER_READ_LIMIT, readMaxBytes: REVIEWER_READ_MAX_BYTES })
+  await ctx.plugin(FileTools, { read: true, readImage: false, write: false, edit: false, applyPatch: false })
   await ctx.plugin(SearchTools, { sampleOverCapGlobResults: false })
   await ctx.plugin(NativeExecutor)
 

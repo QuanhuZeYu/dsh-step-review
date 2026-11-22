@@ -14,7 +14,7 @@ npm run build
 
 响应关口先缓冲主候选，再为每条命中规则通过原生 spawn 创建独立审查会话。审查可调用 preset 工具取证，主候选等待审查结束。默认 `step-review-reader` 提供只读工具；自定义 preset 定义自己的权限。审查会话须跳过本插件关口以避免递归，主会话取消、插件卸载和总期限触发时应终止对应审查。
 
-`reviewerPreset` 默认 `step-review-reader`；`maxReviewSteps` 默认 12，范围 1–64；`timeoutMs` 默认 120000，已有覆盖值继续生效。`maxReviewTokens` 默认 16384，限制每次审查模型响应。模型覆盖和推理等级三态沿用既有契约：空值继承，`null` 使用提供方默认，字符串指定等级。
+`reviewerPreset` 默认 `step-review-reader`；`maxReviewSteps` 默认 12，范围 1–64；`timeoutMs` 默认 120000，已有覆盖值继续生效。审查 activation 显式清除父 Agent 的 `maxTokens` 覆盖，让所选模型按原生设置解析输出上限。插件不累计限制响应字节、初始材料与取证字符，成功取证的文件版本仍在放行前复核。模型覆盖和推理等级三态沿用既有契约：空值继承，`null` 使用提供方默认，字符串指定等级。
 
 配置页读取原生 settingsSchema 与 ConfigForms describe 镜像，按修订号原子保存实际变化字段；冲突时保留草稿。preset 目录使用 `remote.agentPresets.list()`，目录不可用时填写 preset id。配置快照在下一次主模型请求读取；仅刷新网页不能替换 Host 模块。
 
@@ -24,4 +24,4 @@ npm run build
 {"decision":"reject","reason":"具体问题","suggestions":["局部修改建议"]}
 ~~~
 
-通过时使用 `decision=pass`。规则提示词仅定义审查标准。
+通过时使用 `decision=pass`。取证义务由本条规则决定：文本结论规则按给定材料判断具体矛盾，未附构建或运行记录不触发全盘追证；Release 等明确要求核验实际文件的规则仍须读取对应材料。步骤额度包含最终结构化裁决。
