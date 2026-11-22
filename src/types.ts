@@ -16,6 +16,7 @@ export interface StepReviewSettings {
   model: string
   reasoningEffort?: string | null
   timeoutMs: number
+  maxReviewTokens: number
   maxCorrections: number
   maxResponseBytes: number
   maxReviewChars: number

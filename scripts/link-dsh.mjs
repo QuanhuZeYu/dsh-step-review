@@ -1,5 +1,5 @@
 /** 将本插件的开发依赖链接到已构建的 DSH checkout，不修改 checkout。 */
-import { readdir, mkdir, lstat, stat, symlink, readFile, unlink } from 'node:fs/promises'
+import { readdir, mkdir, lstat, stat, symlink, readFile, unlink, realpath } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const root = fileURLToPath(new URL('../', import.meta.url))
@@ -37,7 +37,11 @@ for (const name of new Set([...Object.keys(own.dependencies), ...Object.keys(own
   await mkdir(resolve(target, '..'), { recursive: true })
   try {
     const entry = await lstat(target)
-    try { await stat(target); continue } catch (error) {
+    try {
+      await stat(target)
+      if (await realpath(target) !== await realpath(source)) throw new Error('开发依赖指向其他位置：' + name + '；请核对后移除旧依赖再重新链接。')
+      continue
+    } catch (error) {
       if (error.code !== 'ENOENT' || !entry.isSymbolicLink()) throw error
       // target 是上方已核对的本插件 node_modules 依赖路径，仅移除失效链接本身。
       await unlink(target)

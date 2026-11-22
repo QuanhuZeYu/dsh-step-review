@@ -1,5 +1,6 @@
 import { Worker } from 'node:worker_threads'
 import type { Candidate, Rule } from './types.js'
+import { ReviewError } from './failure.js'
 
 /** 正则匹配在独立 worker 中运行，异常及超时阻止候选放行。 */
 function regexMatches(patterns: string[], subject: string, signal: AbortSignal): Promise<boolean> {
@@ -18,12 +19,12 @@ function regexMatches(patterns: string[], subject: string, signal: AbortSignal):
       void worker.terminate()
       if (error) reject(error); else resolve(match)
     }
-    const abort = () => finish(new Error('规则匹配已取消'))
-    const timer = setTimeout(() => finish(new Error('规则正则匹配超过期限')), 1000)
+    const abort = () => finish(new ReviewError('规则匹配已取消'))
+    const timer = setTimeout(() => finish(new ReviewError('规则正则匹配超过期限')), 1000)
     signal.addEventListener('abort', abort, { once: true })
-    worker.once('message', (result: { match?: boolean; error?: string }) => finish(result.error ? new Error('规则正则错误：' + result.error) : undefined, result.match))
+    worker.once('message', (result: { match?: boolean; error?: string }) => finish(result.error ? new ReviewError('规则正则表达式无效') : undefined, result.match))
     worker.once('error', error => finish(error))
-    worker.once('exit', code => { if (!settled) finish(new Error('规则匹配 worker 提前退出：' + code)) })
+    worker.once('exit', code => { if (!settled) finish(new ReviewError('规则匹配 worker 提前退出：' + code)) })
     if (signal.aborted) abort()
   })
 }
@@ -37,7 +38,7 @@ export async function matchRules(rules: Rule[], candidate: Candidate, signal: Ab
   const ids = new Set<string>()
   for (const rule of rules) {
     signal.throwIfAborted()
-    if (ids.has(rule.id)) throw new Error('规则 id 重复：' + rule.id)
+    if (ids.has(rule.id)) throw new ReviewError('规则 id 重复：' + rule.id)
     ids.add(rule.id)
     if (!rule.enabled) continue
     const subject = subjectFor(rule, candidate)

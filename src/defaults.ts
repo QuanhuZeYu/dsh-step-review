@@ -15,8 +15,11 @@ export const defaultRules: Rule[] = [
     provider: '', model: '', reasoningEffort: '',
   },
 ]
+export const reviewTokenLimit = 65_536
+
 export const defaults: StepReviewSettings = {
   enabled: false, provider: '', model: '', reasoningEffort: '', timeoutMs: 30000, maxCorrections: 3,
+  maxReviewTokens: 16_384,
   maxResponseBytes: 2097152, maxReviewChars: 48000, includeUserRequest: false,
   rules: defaultRules,
 }

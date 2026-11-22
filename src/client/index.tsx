@@ -6,10 +6,10 @@ import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
 import type { ModelCatalog } from '@deepseek-ai/dsh-api-remotes/client'
 import type {} from '@deepseek-ai/dsh-client-ui-model-selection/client'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Button, Input, Switch } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { ConfigForm } from '@deepseek-ai/dsh-client-ui-settings/client'
-import { defaults } from '../defaults.js'
+import { defaults, reviewTokenLimit } from '../defaults.js'
 import { reviewDefinition } from './review-node.js'
 import { ReviewNode } from './ReviewCard.js'
 import { RouteEditor } from './RouteEditor.js'
@@ -20,21 +20,27 @@ import css from './SettingsEditor.module.css'
 import type { Rule, StepReviewSettings } from '../types.js'
 
 export const name = 'step-review-settings'
-export const inject = ['slots', 'configForms', 'remote', 'remote.session', 'uiConversation']
-function validation(value: StepReviewSettings, issues: RuleIssues[]): string {
-  if (!Number.isInteger(value.timeoutMs) || value.timeoutMs < 100 || value.timeoutMs > 300000) return '审查总期限须在 100–300000 毫秒之间。'
-  if (!Number.isInteger(value.maxCorrections) || value.maxCorrections < 0 || value.maxCorrections > 10) return '自动订正次数须在 0–10 之间。'
-  if (!Number.isInteger(value.maxResponseBytes) || value.maxResponseBytes < 1024 || value.maxResponseBytes > 16777216) return '响应缓冲上限须在 1024–16777216 字节之间。'
-  if (!Number.isInteger(value.maxReviewChars) || value.maxReviewChars < 1000 || value.maxReviewChars > 200000) return '审查材料上限须在 1000–200000 字符之间。'
+export const inject = ['slots', 'configForms', 'settingsSchema', 'remote', 'remote.session', 'uiConversation']
+// 新客户端可能先于服务端模块更新，旧描述不会包含输出上限。
+type SettingsFormValue = Omit<StepReviewSettings, 'maxReviewTokens'> & { maxReviewTokens?: number }
+
+function formValue(value: SettingsFormValue): StepReviewSettings {
+  return structuredClone({ ...defaults, ...value, maxReviewTokens: value.maxReviewTokens ?? defaults.maxReviewTokens })
+}
+function validation(value: SettingsFormValue, issues: RuleIssues[]): string {
   for (const [index, rule] of value.rules.entries()) {
     const first = Object.values(issues[index])[0]
     if (first) return (rule.id || '未命名规则') + '：' + first
   }
   return ''
 }
-function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<StepReviewSettings> } & PropsLocale<'model'>) {
+function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<SettingsFormValue> } & PropsLocale<'model'>) {
   const remote = useSyncExternalStore(scope.subscribe.bind(scope), scope.getSnapshot.bind(scope), scope.getSnapshot.bind(scope))
-  const [draft, setDraft] = useState<StepReviewSettings>()
+  const mirror = ctx.configForms.describe()
+  const description = useSyncExternalStore(mirror.subscribe.bind(mirror), mirror.getSnapshot.bind(mirror), mirror.getSnapshot.bind(mirror))
+  const namespace = description.view?.namespaces.find(item => item.ns === 'step-review')
+  const schema = useMemo(() => namespace ? ctx.settingsSchema.rehydrate(namespace.schema) : undefined, [ctx, namespace?.schema])
+  const [draft, setDraft] = useState<SettingsFormValue>()
   const [revision, setRevision] = useState<number>()
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -48,7 +54,7 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<StepReviewS
   const newRules = useRef(new Set<string>())
   const resetKeys = () => { ruleKeys.current = []; newRules.current.clear() }
   useEffect(() => {
-    if (!dirty && !saving && remote.value && remote.revision !== undefined) { setDraft(structuredClone(remote.value)); setRevision(remote.revision); resetKeys() }
+    if (!dirty && !saving && remote.value && remote.revision !== undefined) { setDraft(formValue(remote.value)); setRevision(remote.revision); resetKeys() }
   }, [remote, dirty, saving])
   useEffect(() => {
     let active = true
@@ -66,14 +72,27 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<StepReviewS
   const edit = (patch: Partial<StepReviewSettings>) => { setDraft({ ...draft, ...patch }); setDirty(true); setMessage('') }
   const editRule = (index: number, patch: Partial<Rule>) => edit({ rules: draft.rules.map((rule, i) => i === index ? { ...rule, ...patch } : rule) })
   const issues = draft.rules.map(rule => ruleIssues(rule, draft))
-  const error = validation(draft, issues)
+  const schemaError = schema ? ctx.settingsSchema.validate(schema, draft) : undefined
+  const error = validation(draft, issues) || (schemaError ? '配置校验失败：' + schemaError : '')
+  const budgetNode = schema ? ctx.settingsSchema.nodeAtPath(schema, ['maxReviewTokens']) : undefined
+  const budgetSupported = budgetNode !== undefined
+  const defaultBudget = typeof budgetNode?.meta.default === 'number' ? budgetNode.meta.default : defaults.maxReviewTokens
+  const budget = draft.maxReviewTokens ?? defaults.maxReviewTokens
   const conflict = dirty && revision !== remote.revision
-  const reload = () => { if (remote.value) { setDraft(structuredClone(remote.value)); setRevision(remote.revision); setDirty(false); resetKeys(); setResetRules(false); setMessage('已载入当前配置。') } }
+  const reload = () => { if (remote.value) { setDraft(formValue(remote.value)); setRevision(remote.revision); setDirty(false); resetKeys(); setResetRules(false); setMessage('已载入当前配置。') } }
   const save = async () => {
-    if (error || conflict || revision === undefined) return
+    if (error || conflict || revision === undefined || !schema || !remote.value) return
     setSaving(true); setMessage('正在保存…')
     try {
-      const accepted = await scope.mutate(Object.entries(draft).map(([key, value]) => ({ op: 'set' as const, path: [key], value })), revision)
+      const baseline = formValue(remote.value)
+      const changed = Object.entries(draft).filter(([key, value]) => Object.hasOwn(defaults, key)
+        && JSON.stringify(value) !== JSON.stringify(baseline[key as keyof StepReviewSettings]))
+      const unsupported = changed.find(([key]) => !ctx.settingsSchema.nodeAtPath(schema, [key]))
+      if (unsupported) { setMessage('当前服务端尚未支持此设置，请先通过插件管理器加载新版插件后再保存。'); return }
+      if (!changed.length) { setDirty(false); setMessage('配置未发生变化。'); return }
+      const ops = changed
+        .map(([key, value]) => ({ op: 'set' as const, path: [key], value: Array.isArray(value) ? value.map(rule => ({ ...rule })) : value }))
+      const accepted = await scope.mutate(ops, revision)
       if (accepted) { setDirty(false); setMessage('已保存，后续主模型请求使用新配置。') }
       else setMessage('保存未接受，请检查配置或重新载入后再编辑。')
     } catch (error) { setMessage('保存失败：' + (error instanceof Error ? error.message : String(error))) }
@@ -114,6 +133,14 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<StepReviewS
           <label className={css.field}><span>审查超时（毫秒）</span><Input className={css.input} disabled={disabled} type='number' min={100} max={300000} step={1} value={draft.timeoutMs} onChange={event => edit({ timeoutMs: event.target.valueAsNumber })} /></label>
           <label className={css.field}><span>单步骤自动订正次数</span><Input className={css.input} disabled={disabled} type='number' min={0} max={10} step={1} value={draft.maxCorrections} onChange={event => edit({ maxCorrections: event.target.valueAsNumber })} /></label>
         </div>
+        <label className={css.field}><span>审查输出上限（token）</span>
+          <Input className={css.input} disabled={disabled} type='number' min={1} max={reviewTokenLimit} step={1}
+            value={Number.isNaN(budget) ? '' : budget} onChange={event => edit({ maxReviewTokens: event.target.valueAsNumber })} />
+          <span className={css.hint}>默认 {defaultBudget.toLocaleString('en-US')} token。仅用于审查模型，填写值应符合提供方支持的输出上限。</span>
+        </label>
+        {!budgetSupported && <p className={css.hint}>当前服务端尚未提供此设置；可编辑草稿，保存输出上限前请先通过插件管理器加载新版插件。</p>}
+        {schema && ctx.settingsSchema.nodeAtPath(schema, ['retryReviewTokens']) &&
+          <p className={css.hint}>当前服务端仍使用旧版重试逻辑，重新加载新版服务端插件后才会改为单次审查。</p>}
         <div className={css.switchRow}><div className={css.switchText}><span>提供最近一条用户请求</span><p className={css.hint}>向审查器补充本次任务的上下文。</p></div><Switch checked={draft.includeUserRequest} disabled={disabled} label='提供最近一条用户请求' onChange={includeUserRequest => edit({ includeUserRequest })} /></div>
         <div className={css.columns}>
           <label className={css.field}><span>响应缓冲上限（字节）</span><Input className={css.input} disabled={disabled} type='number' min={1024} max={16777216} step={1} value={draft.maxResponseBytes} onChange={event => edit({ maxResponseBytes: event.target.valueAsNumber })} /></label>
@@ -126,14 +153,14 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<StepReviewS
       {conflict && <p className={css.error} role='alert'>配置已在其他位置更新。请重新载入后编辑。</p>}
       {!remote.writable && <p className={css.hint}>当前配置为只读。</p>}
       <footer className={css.footer}><span className={css.hint} role='status' aria-live='polite'>{message || (dirty ? '有未保存的更改' : '配置已同步')}</span>
-        <div className={css.actions}><Button disabled={saving} onClick={reload}>重新载入</Button><Button type='submit' variant='primary' disabled={!dirty || disabled || Boolean(error) || conflict}>{saving ? '正在保存…' : '保存并生效'}</Button></div></footer>
+        <div className={css.actions}><Button disabled={saving} onClick={reload}>放弃草稿并载入当前配置</Button><Button type='submit' variant='primary' disabled={!schema || !dirty || disabled || Boolean(error) || conflict}>{saving ? '正在保存…' : '保存并生效'}</Button></div></footer>
     </div>
   </form>
 }
 export function apply(ctx: Context): void {
   ctx.effect(() => ctx.uiConversation.events.register(reviewDefinition))
   ctx.slots.inject('conversation.chat.node', () => ctx.slots.register({ name: 'conversation.chat.node', key: 'step-review', locale: 'conversation' }, ReviewNode))
-  const scope = ctx.configForms.get<StepReviewSettings>('step-review')
+  const scope = ctx.configForms.get<SettingsFormValue>('step-review')
   const render = ({ t }: PropsLocale<'model'>) => <Editor ctx={ctx} scope={scope} t={t} />
   ctx.slots.inject('plugins.bundle.config', () => ctx.slots.register({ name: 'plugins.bundle.config', key: 'dsh-step-review', locale: 'model' }, render))
   ctx.slots.inject('plugins.row.config', () => ctx.slots.register({ name: 'plugins.row.config', key: 'dsh-step-review#step-review', locale: 'model' }, ({ view, t }) => view === 'summary' ? '按机械规则审查模型响应，拒绝后反馈给原会话订正' : render({ t })))

@@ -1,7 +1,7 @@
 /** 列表摘要和编辑区共用规则校验，保存前使用相同结果。 */
 import type { Rule, StepReviewSettings } from '../types.js'
 export interface RuleIssues { id?: string; prompt?: string; patterns?: string; model?: string }
-export function ruleIssues(rule: Rule, settings: StepReviewSettings): RuleIssues {
+export function ruleIssues(rule: Rule, settings: Pick<StepReviewSettings, 'enabled' | 'provider' | 'model' | 'rules'>): RuleIssues {
   const issues: RuleIssues = {}
   if (!rule.id.trim()) issues.id = '填写规则名称。'
   else if (settings.rules.filter(item => item.id === rule.id).length > 1) issues.id = '规则名称与其他规则重复。'

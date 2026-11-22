@@ -1,6 +1,6 @@
 {
   "name": "dsh-step-review",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "在模型响应交付前按规则审查，拒绝后将建议反馈给原会话订正。",
   "type": "module",
   "main": "./lib/index.js",
@@ -26,6 +26,8 @@
   ],
   "scripts": {
     "link-dsh": "node scripts/link-dsh.mjs",
+    "watch:host": "node node_modules/typescript/bin/tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "watch:client": "node scripts/build-client.mjs --watch",
     "typecheck": "node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit && node node_modules/typescript/bin/tsc -p tsconfig.client.json --noEmit --emitDeclarationOnly false",
     "build": "node node_modules/typescript/bin/tsc -p tsconfig.json && node scripts/build-client.mjs"
   },

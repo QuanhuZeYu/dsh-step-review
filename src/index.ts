@@ -8,6 +8,7 @@ import { Config, snapshot } from './config.js'
 import type { LiveConfig } from './config.js'
 import { matchRules } from './matcher.js'
 import { reviewCandidate } from './reviewer.js'
+import { ReviewError, safeErrorMessage } from './failure.js'
 import type { Candidate, RuleVerdict, ReviewRecord } from './types.js'
 
 export { Config }
@@ -59,7 +60,7 @@ export function apply(ctx: Context, config: LiveConfig): void {
     const settings = snapshot(config)
     if (!settings.enabled) return next()
     const agent = request.sessionId === undefined ? undefined : ctx.agents.get(request.sessionId)
-    if (!agent) throw new Error('逐步骤审查无法确定所属 Agent')
+    if (!agent) throw new ReviewError('逐步骤审查无法确定所属 Agent')
     const signal = AbortSignal.any([...(request.signal ? [request.signal] : []), lifetime.signal])
     return (async function* (): AsyncGenerator<StreamChunk> {
       active.add(agent)
@@ -74,15 +75,15 @@ export function apply(ctx: Context, config: LiveConfig): void {
           signal.throwIfAborted()
           for await (const chunk of next()) {
             signal.throwIfAborted()
-            if (finished) throw new Error('模型在完成标记后继续输出')
+            if (finished) throw new ReviewError('模型在完成标记后继续输出')
             bytes += Buffer.byteLength(JSON.stringify(chunk))
-            if (bytes > settings.maxResponseBytes) throw new Error('主模型响应超过缓冲字节上限')
+            if (bytes > settings.maxResponseBytes) throw new ReviewError('主模型响应超过缓冲字节上限')
             chunks.push(chunk)
             assembled.push(chunk)
             if (chunk.type === 'finish') finished = true
           }
           signal.throwIfAborted()
-          if (!finished) throw new Error('主模型响应缺少完成标记')
+          if (!finished) throw new ReviewError('主模型响应缺少完成标记')
           const finish = assembled.finish
           if (finish.kind === 'error' || finish.kind === 'aborted') {
             for (const chunk of chunks) if (chunk.type === 'usage' || chunk.type === 'finish') yield chunk
@@ -107,9 +108,9 @@ export function apply(ctx: Context, config: LiveConfig): void {
           }
         } catch (error) {
           if (signal.aborted) throw signal.reason
-          failure = { candidate, results: [], error: error instanceof Error ? error.message : String(error), maxCorrections: settings.maxCorrections }
+          failure = { candidate, results: [], error: safeErrorMessage(error), maxCorrections: settings.maxCorrections }
         }
-        if (!failure) throw new Error('逐步骤审查缺少终态')
+        if (!failure) throw new ReviewError('逐步骤审查缺少终态')
         pending.set(agent, failure)
         if (assembled.usage) yield { type: 'usage', usage: assembled.usage }
         yield { type: 'finish', reason: { kind: 'error', failure: {
@@ -123,7 +124,7 @@ export function apply(ctx: Context, config: LiveConfig): void {
   ctx.on('agent/request-error', async (payload, next) => {
     if (payload.failure.code !== REJECTED && payload.failure.code !== FAILED) return next()
     const item = pending.get(payload.agent)
-    if (!item) throw new Error('逐步骤审查恢复状态缺失，已停止本次响应')
+    if (!item) throw new ReviewError('逐步骤审查恢复状态缺失，已停止本次响应')
     pending.delete(payload.agent)
     payload.signal.throwIfAborted()
     lifetime.signal.throwIfAborted()
@@ -140,7 +141,7 @@ export function apply(ctx: Context, config: LiveConfig): void {
         },
         content: [{ type: 'text', text: feedback(item, stopped) }],
       }), { surfaceOp: 'append' })
-    if (stopped) throw new Error(item.error ? '逐步骤审查故障：' + item.error : '逐步骤审查已达到自动订正次数上限')
+    if (stopped) throw new ReviewError(item.error ? '逐步骤审查故障：' + item.error : '逐步骤审查已达到自动订正次数上限')
     return { kind: 'retry' }
   }, { global: true, prepend: true })
 }
