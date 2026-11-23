@@ -1,0 +1,21 @@
+.card {
+  margin: 16px 0;
+  border: 1px solid var(--dsw-alias-border-l4, #8886);
+  border-left: 3px solid var(--dsw-alias-border-l4, #8886);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--dsw-alias-bg-layer-2, transparent);
+  color: var(--dsw-alias-label-primary, inherit);
+  font-size: var(--dsh-content-font-size, 14px);
+}
+.card[data-phase='reviewing'] { border-color: var(--dsw-alias-button-info-fill, #5088d8); }
+.card[data-phase='rejected'] { border-color: var(--dsw-alias-state-error-primary, #ce6544); }
+.header { padding: 14px 18px; }
+.titleRow { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; justify-content: space-between; }
+.meta, .hint { color: var(--dsw-alias-label-secondary, #888); font-size: 12px; }
+.meta { margin: 7px 0 0; }
+.body { padding: 14px 18px; border-top: 1px solid var(--dsw-alias-border-l2, #8883); min-width: 0; }
+.content { display: flex; flex-direction: column; gap: 12px; min-width: 0; overflow-wrap: anywhere; }
+.hint { margin: 0; }
+.reasoning { padding: 8px 0 0; }
+.tools { display: flex; flex-direction: column; gap: 8px; min-width: 0; }

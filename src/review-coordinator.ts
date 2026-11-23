@@ -2,7 +2,7 @@ import { symbols, type Context } from '@deepseek-ai/cordis'
 import type { FileSystem, FsObservation, FsTarget } from '@deepseek-ai/dsh-fs'
 import type { SubagentCapacityPool, SubagentRuntime } from '@deepseek-ai/dsh-subagent'
 import type { LiveConfig } from './config.js'
-import type { StreamChunk } from '@deepseek-ai/dsh-llm'
+import { isAgentLoopRequest, type StreamChunk } from '@deepseek-ai/dsh-llm'
 import type { ToolExecution } from '@deepseek-ai/dsh-tools'
 import type { StepReviewSettings } from './types.js'
 import { failureDetails, ReviewError } from './failure.js'
@@ -51,6 +51,8 @@ export class ReviewCoordinator {
         return next()
       }, { global: true, prepend: true }),
       root.on('llm/stream', (request, next) => {
+        // 标题等辅助请求共享会话 ID，其错误不属于审查正文。
+        if (!isAgentLoopRequest(request)) return next()
         const run = request.sessionId === undefined ? undefined : this.runs.get(request.sessionId)
         if (!run) return next()
         const coordinator = this

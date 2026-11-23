@@ -313,7 +313,7 @@ index 5047ebc659..dd43cae50f 100644
  <a id="persistence-type-eventsubagentdescriptor"></a>
 diff --git a/docs/persistence-changes/2026-11-22-subagent-catalog-category.i18n.yaml b/docs/persistence-changes/2026-11-22-subagent-catalog-category.i18n.yaml
 new file mode 100644
-index 0000000000..7775a2151d
+index 0000000000..a203f20325
 --- /dev/null
 +++ b/docs/persistence-changes/2026-11-22-subagent-catalog-category.i18n.yaml
 @@ -0,0 +1,28 @@
@@ -340,14 +340,14 @@ index 0000000000..7775a2151d
 +  en: f501c02e1d594c04
 +  zh: cf350663b683a881
 +/2026-11-22-subagent-catalog-category/verification:
-+  en: b5d569433aedfb2d
-+  zh: cb51a6da7b69b6f4
++  en: f50c85d649ffc700
++  zh: a5b7e99d8f9e07e0
 +/2026-11-22-subagent-catalog-category/dev-note:
 +  en: b75c8458928b72b9
 +  zh: 003ba4e17b4b5269
 diff --git a/docs/persistence-changes/2026-11-22-subagent-catalog-category.md b/docs/persistence-changes/2026-11-22-subagent-catalog-category.md
 new file mode 100644
-index 0000000000..f30cffe4a4
+index 0000000000..a2af38de7b
 --- /dev/null
 +++ b/docs/persistence-changes/2026-11-22-subagent-catalog-category.md
 @@ -0,0 +1,48 @@
@@ -393,7 +393,7 @@ index 0000000000..f30cffe4a4
 +<a id="verification"></a>
 +## Verification
 +
-+三个授权运行包源码 noEmit（vendor 使用既有 lib/types 声明）diagnostics=0。已有408项回归中406通过；两项旧断言分别固定缓存版本6和完整树工具描述，按用户要求保留原测试。自清理原生 Loader/cordis.yml 探针已验证本地创建、首次发布即 review 分类、完整 review→helper 与 worker 子树；后续检查在工具格式化文本的 JSON 解析处终止。最终新lib分类与持久重放验收由主流程独立跟踪。
++核对分类首次发布、历史重放与工作列表过滤是否符合本事件的目录语义。
 +
 +<a id="dev-note"></a>
 +## Dev Note
@@ -423,7 +423,7 @@ index 0000000000..248e02d8ad
 +}
 diff --git a/docs/persistence-changes/2026-11-22-subagent-catalog-category.zh.md b/docs/persistence-changes/2026-11-22-subagent-catalog-category.zh.md
 new file mode 100644
-index 0000000000..fbffbfa4e7
+index 0000000000..b6c9092f80
 --- /dev/null
 +++ b/docs/persistence-changes/2026-11-22-subagent-catalog-category.zh.md
 @@ -0,0 +1,48 @@
@@ -469,7 +469,7 @@ index 0000000000..fbffbfa4e7
 +<a id="verification"></a>
 +## 验证
 +
-+三个授权运行包源码 noEmit（vendor 使用既有 lib/types 声明）diagnostics=0。已有408项回归中406通过；两项旧断言分别固定缓存版本6和完整树工具描述，按用户要求保留原测试。自清理原生 Loader/cordis.yml 探针已验证本地创建、首次发布即 review 分类、完整 review→helper 与 worker 子树；后续检查在工具格式化文本的 JSON 解析处终止。最终新lib分类与持久重放验收由主流程独立跟踪。
++核对分类首次发布、历史重放与工作列表过滤是否符合本事件的目录语义。
 +
 +<a id="dev-note"></a>
 +## 开发备注

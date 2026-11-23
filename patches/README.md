@@ -1,27 +1,31 @@
-# 宿主目录分类补丁
+# 宿主补丁
 
-此补丁为 DSH 0.2.2-rc.5 增加持久目录分类、工作 Agent 发现过滤和独立“审查”入口。插件安装包不替换宿主模块；需要目录分组时，在 DSH 源码 checkout 应用此补丁。
+v0.2.3 需要宿主的独立审查池与生成计时接口。插件安装包包含补丁，安装不会自动替换宿主模块。目标环境为 DSH 0.2.2-rc.5 Web。
 
-适用基线：`9c2670d3bce5275e0d1610272958121af87787bb`。其他版本先用 `git apply --check` 检查适用性。宿主已有相同能力时无需重复应用。
+## 从普通 rc.5 升级
 
-在宿主 checkout 执行，将补丁路径替换为实际下载位置：
+已验证基线为 `9c2670d3bce5275e0d1610272958121af87787bb`。先关闭逐步骤审查插件包，在宿主源码 checkout 按以下顺序检查并应用补丁；将路径替换为实际下载位置：
 
 ```sh
 git apply --check /path/to/dsh-0.2.2-rc.5-review-catalog.patch
 git apply /path/to/dsh-0.2.2-rc.5-review-catalog.patch
-pnpm run build
-```
-
-独立审查池另需应用 `dsh-0.2.2-rc.5-review-capacity.patch`，其基线是已应用目录分类补丁的宿主（`054f7538b342adfa3eb2224856471b0825419c3a`）。已具备目录分类时只需应用容量池补丁：
-
-```sh
 git apply --check /path/to/dsh-0.2.2-rc.5-review-capacity.patch
 git apply /path/to/dsh-0.2.2-rc.5-review-capacity.patch
+git apply --check /path/to/dsh-0.2.2-rc.5-stream-timing.patch
+git apply /path/to/dsh-0.2.2-rc.5-stream-timing.patch
 pnpm run build
 ```
 
-先完成宿主构建，再重启服务并加载插件新产物，最后刷新页面。新插件需要宿主 `createCapacityPool` 接口；审查并发在插件高级设置中调整，默认 16。重启会结束现有运行任务，应在合适时机执行。工作 Agent 与审查会话分别显示；历史审查在身份确认后归类。补丁保留原生权限、运行生命周期和完整会话目录。
+完成构建后重启原宿主，再安装 v0.2.3、重新启用插件并刷新页面。重启会结束正在运行的任务。其他源码版本先用 `git apply --check` 核对适用性。
 
-目录界面浏览器构建配置名带 `/client` 后缀，定向构建时必须包含该配置；标准完整构建已覆盖。
+已应用目录分类和容量池补丁的用户，仅需检查并应用计时补丁。已具备全部接口和统计消费者修复的宿主无需重复应用。计时补丁的导出基线为 `8c3f369a72a7e9c784759e32b083f405a14bd7e0`，同时已验证能接续上述公开 rc.5 补丁链。
+
+## 补丁作用
+
+- `review-catalog`：持久审查分类、独立“审查”入口与工作 Agent 发现过滤。
+- `review-capacity`：独立审查容量池，默认并发 16，可在插件高级设置调整。
+- `stream-timing`：按 LLM 实例与请求保留 chunk 原始采样时间，统一聊天、轨迹和统计的生成完成端点。审核等待保留在步骤墙钟中，排除在生成速度分母之外；旧记录丢失的原始时间无法精确还原。
+
+标准完整构建覆盖客户端资源；定向构建时要包含名称带 `/client` 后缀的浏览器配置。补丁保留原生权限、工具审核关口和会话事件结构。
 
 DSH 代码遵循 MIT 许可证，版权声明见[第三方声明](../THIRD-PARTY-NOTICES)。

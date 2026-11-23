@@ -36,6 +36,8 @@ export interface RuleVerdict { ruleId: string; verdict: Verdict; reviewerSession
 /** 与一次订正注入同时保存的展示数据；工具参数仅为记录。 */
 export interface ReviewRecord {
   version: 1
+  /** 同一次候选从流式预览转为拒绝块时保留节点身份。 */
+  previewId?: string
   turn: number
   step: number
   correction: number

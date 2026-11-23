@@ -14,16 +14,18 @@ import { webCardModel } from '@deepseek-ai/dsh-client-ui-tool/src/client/tool/mo
 const icons = { code: IconCodeOutlineRegular, read: IconBrowseOutlineRegular, bash: IconApiOutlineRegular,
   write: IconEditOutlineRegular, edit: IconEditOutlineRegular, search: IconSearchOutlineRegular, others: IconSparkleRegular }
 type Props = Pick<ChatNodeViewProps<'step-review'>, 'cwd' | 'openFile' | 'useDisclosure'> & PropsLocale<'conversation'> & {
-  name: string; arguments: string; identity: string
+  name: string; arguments: string; identity: string; pending?: boolean
 }
-export function CandidateTool({ name, arguments: argsRaw, identity, cwd, openFile, useDisclosure, t }: Props) {
+export function CandidateTool({ name, arguments: argsRaw, identity, pending = false, cwd, openFile, useDisclosure, t }: Props) {
   // 这只是渲染器输入，候选不会写入 tool/call 或 tool/result。
   const block = useMemo<StartedToolCall>(() => ({ phase: 'start', name, callId: identity, argsRaw,
     args: PartialArguments.fromText(argsRaw), turn: 0, step: 0, time: 0, subCalls: [] }), [name, identity, argsRaw])
   const model = useMemo(() => toolRowModel(name, block, cwd), [name, block, cwd])
   const Icon = icons[model.variant]
+  // 保留停止态的参数展开能力，仅将待审候选的状态标签改为待审。
+  const candidateT: Props['t'] = (key, ...args) => pending && key === 'row.stopped' ? '待审' : t(key, ...args)
   return <div data-step-review-tool>
-    <ToolRow useDisclosure={useDisclosure} t={t} variant={model.variant} toolName={name} icon={<Icon size={14} />}
+    <ToolRow useDisclosure={useDisclosure} t={candidateT} variant={model.variant} toolName={name} icon={<Icon size={14} />}
       title={t(model.titleKey)} summary={model.summary} bodyRaw={model.filePath ? null : model.bodyRaw} state='stopped'
       read={readCardModel(block, cwd)} diff={diffCardModel(block)}
       search={searchCardModel(block)} web={webCardModel(block)}

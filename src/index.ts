@@ -9,6 +9,7 @@ import type { LiveConfig } from './config.js'
 import { matchRules } from './matcher.js'
 import { reviewCandidate } from './reviewer.js'
 import { registerReviewCatalog } from './review-catalog.js'
+import { ReviewPreview } from './stream-preview.js'
 import { reviewCoordinator, verifyEvidence, type ReviewEvidence } from './review-coordinator.js'
 import './reviewer-preset.js'
 import { ReviewError, safeErrorMessage } from './failure.js'
@@ -25,7 +26,7 @@ declare module '@deepseek-ai/dsh-llm' {
     'step-review': { kind: 'step-review'; form: 'notice'; summary: string; review?: ReviewRecord }
   }
 }
-interface Pending { candidate?: Candidate; results: RuleVerdict[]; error?: string; maxCorrections: number }
+interface Pending { previewId?: string; candidate?: Candidate; results: RuleVerdict[]; error?: string; maxCorrections: number }
 
 function feedback(pending: Pending, stopped: boolean): string {
   const parts = [pending.error ? '逐步骤审查发生故障，本次候选未放行。' : '本次候选被逐步骤审查拒绝。',
@@ -49,6 +50,11 @@ export async function apply(ctx: Context, config: LiveConfig): Promise<void> {
   registerReviewCatalog(ctx)
   const lifetime = new AbortController()
   const active = new Set<Agent>()
+  const positions = new WeakMap<Agent, { turn: number; step: number }>()
+  ctx.on('agent/pre-step', (payload, next) => {
+    positions.set(payload.agent, { turn: payload.turn, step: payload.step })
+    return next()
+  }, { global: true, prepend: true })
   const pending = new WeakMap<Agent, Pending>()
   const budgets = new WeakMap<Agent, { key: string; count: number }>()
   ctx.inject(['settings'], child => {
@@ -69,7 +75,10 @@ export async function apply(ctx: Context, config: LiveConfig): Promise<void> {
     const signal = AbortSignal.any([...(request.signal ? [request.signal] : []), lifetime.signal])
     return (async function* (): AsyncGenerator<StreamChunk> {
       active.add(agent)
+      let preview: ReviewPreview | undefined
       try {
+        const position = positions.get(agent)
+        if (!position) throw new ReviewError('逐步骤审查无法确定当前步骤')
         const chunks: StreamChunk[] = []
         const assembled = new BlockAssembler()
         let candidate: Candidate | undefined
@@ -78,11 +87,17 @@ export async function apply(ctx: Context, config: LiveConfig): Promise<void> {
         let phase = '主响应缓冲'
         try {
           signal.throwIfAborted()
-          for await (const chunk of next()) {
+          preview = new ReviewPreview(agent.session, position.turn, position.step)
+          for await (const source of next()) {
+            // 自定义上游也可能复用对象；未采样时为本次出现分配独立身份。
+            const chunk = ctx.llm.streamChunkTime(request, source) === undefined ? { ...source } : source
             signal.throwIfAborted()
             if (finished) throw new ReviewError('模型在完成标记后继续输出')
+            // 在审核前记录真实采样时间，放行时仍保留原始chunk身份。
+            ctx.llm.markStreamChunkTime(request, chunk)
             chunks.push(chunk)
             assembled.push(chunk)
+            preview.push(chunk)
             if (chunk.type === 'finish') finished = true
           }
           signal.throwIfAborted()
@@ -98,28 +113,31 @@ export async function apply(ctx: Context, config: LiveConfig): Promise<void> {
             tools: blocks.filter(b => b.type === 'tool-call').map(b => ({ name: b.name, arguments: b.arguments })),
           }
           phase = '机械匹配'
+          preview.reviewing(candidate)
           const matched = await matchRules(settings.rules, candidate, signal)
           const results: RuleVerdict[] = []
           const evidence: ReviewEvidence[] = []
           for (const rule of matched) {
             signal.throwIfAborted()
             phase = '规则 ' + JSON.stringify(rule.id) + ' 的子 Agent 审查'
+            preview.reviewing(candidate, rule.id)
             const outcome = await reviewCandidate(ctx, settings, rule, candidate, request, signal)
             results.push({ ruleId: rule.id, verdict: outcome.verdict, reviewerSessionId: outcome.reviewerSessionId })
             evidence.push(...outcome.evidence)
           }
           signal.throwIfAborted()
-          if (results.some(r => r.verdict.decision === 'reject')) failure = { candidate, results, maxCorrections: settings.maxCorrections }
+          if (results.some(r => r.verdict.decision === 'reject')) failure = { previewId: preview.id, candidate, results, maxCorrections: settings.maxCorrections }
           else {
             phase = '取证文件版本复核'
             await verifyEvidence(evidence, signal)
             signal.throwIfAborted()
+            preview.release()
             for (const chunk of chunks) { signal.throwIfAborted(); yield chunk }
             return
           }
         } catch (error) {
           if (signal.aborted) throw signal.reason
-          failure = { candidate, results: [], error: phase + '：' + safeErrorMessage(error), maxCorrections: settings.maxCorrections }
+          failure = { previewId: preview?.id, candidate, results: [], error: phase + '：' + safeErrorMessage(error), maxCorrections: settings.maxCorrections }
         }
         if (!failure) throw new ReviewError('逐步骤审查缺少终态')
         pending.set(agent, failure)
@@ -128,7 +146,11 @@ export async function apply(ctx: Context, config: LiveConfig): Promise<void> {
           code: failure.error ? FAILED : REJECTED,
           message: failure.error ? '逐步骤审查失败：' + failure.error : '逐步骤审查拒绝本次候选，等待订正。',
         } } }
-      } finally { active.delete(agent) }
+      } finally {
+        // 展示记录清理不能覆盖已选择的审核结果、故障反馈或取消。
+        try { preview?.close() } catch { ctx.logger.warn('待审预览关闭失败，请检查会话记录存储') }
+        finally { active.delete(agent) }
+      }
     })()
   }, { global: true, prepend: true })
 
@@ -147,7 +169,7 @@ export async function apply(ctx: Context, config: LiveConfig): Promise<void> {
     payload.agent.session.append('user/message', createUserMessage({
         source: {
           kind: 'step-review', form: 'notice', summary: stopped ? '审查停止，等待处理' : '审查拒绝，要求原会话订正',
-          review: { version: 1, turn: payload.turn, step: payload.step, correction: count, stopped,
+          review: { version: 1, previewId: item.previewId, turn: payload.turn, step: payload.step, correction: count, stopped,
             candidate: item.candidate, results: item.results, ...(item.error ? { error: item.error } : {}) },
         },
         content: [{ type: 'text', text: feedback(item, stopped) }],

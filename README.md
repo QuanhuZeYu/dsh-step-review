@@ -4,18 +4,21 @@
 
 - 内置提交说明、Release 正文、精炼表达、结论与证据相称、综合交付五条规则。
 - 支持关键词、正则匹配；提示词、审查模型和推理等级可单独配置。
+- 候选在待审块中流式展示，审核时切换边框颜色；通过后恢复正常消息，拒绝后在原块展示订正反馈。
 - 保存后热更新，后续主模型请求使用新配置。
 - 拒绝记录展示候选内容与订正反馈，代码沿用 DSH 原生渲染。
 
 ## 安装
 
-适用于 DSH 0.2.2-rc.5 的 Web 界面和 Node.js 24.9 或以上版本。独立审查池需要宿主先应用配套补丁，完成构建和重启后再安装或升级插件。已构建的安装包可从 [GitHub Releases](https://github.com/QuanhuZeYu/dsh-step-review/releases) 获取：
+生成速度修复依赖宿主按请求保留 chunk 原始采样时间。请先应用并构建 [计时补丁](patches/dsh-0.2.2-rc.5-stream-timing.patch)，重启宿主后加载本版插件；补丁基线和操作见 [补丁说明](patches/README.md)。聊天、轨迹和统计的生成速度采用模型 finish 时间，审核等待保留在步骤墙钟中。
+
+v0.2.3 为预览版，适用于 DSH 0.2.2-rc.5 Web 与 Node.js 24.9 或以上版本。宿主需具备独立审查池和生成计时接口；普通 rc.5 请按[补丁说明](patches/README.md)完成宿主升级，再安装本版插件。安装包见 [GitHub Releases](https://github.com/QuanhuZeYu/dsh-step-review/releases)：
 
 ~~~sh
-dsh plugin --profile web add https://github.com/QuanhuZeYu/dsh-step-review/releases/download/v0.2.2/dsh-step-review-0.2.2.tgz
+dsh plugin --profile web add https://github.com/QuanhuZeYu/dsh-step-review/releases/download/v0.2.3/dsh-step-review-0.2.3.tgz
 ~~~
 
-安装或升级均可使用上面的命令。安装后在 DSH Web 的「插件 → 逐步骤审查」打开配置。插件加载遵循 DSH 原生热更新流程；若宿主报告需要重启，再按提示处理。
+升级前先在插件管理器关闭逐步骤审查插件包。完成宿主补丁构建并重启后，再使用上面的命令安装、重新启用插件并刷新页面。配置入口为 DSH Web 的「插件 → 逐步骤审查」。
 
 ## 使用
 
@@ -33,6 +36,6 @@ Release 规则只审查实际创建或更新正文的发布操作；写草稿、
 
 命中规则时，相关回复、工具参数和取证内容会发送给所选审查模型。「提供最近一条用户请求」默认关闭。请根据数据敏感程度选择提供方。
 
-独立审查池需要宿主提供 `createCapacityPool` 接口。普通 DSH 0.2.2-rc.5 需应用[配套宿主补丁](https://github.com/QuanhuZeYu/dsh-step-review/tree/main/patches)，重新构建并重启宿主后再加载本插件产物；旧宿主会明确提示升级要求。目录分组由同一组补丁提供。
+本版需要宿主提供 `createCapacityPool`、`markStreamChunkTime` 和 `streamChunkTime` 接口。配套补丁同时更新聊天、轨迹和统计的生成完成端点。历史记录中已丢失的上游生成时间无法精确还原。
 
 [开发说明](docs/development.md) · [MIT 许可证](LICENSE) · [第三方声明](THIRD-PARTY-NOTICES)

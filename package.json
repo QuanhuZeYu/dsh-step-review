@@ -1,6 +1,6 @@
 {
   "name": "dsh-step-review",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "在模型响应交付前按规则审查，拒绝后将建议反馈给原会话订正。",
   "type": "module",
   "main": "./lib/index.js",
