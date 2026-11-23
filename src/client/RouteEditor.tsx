@@ -11,9 +11,9 @@ export function RouteEditor(props: Omit<ComponentProps<typeof ReviewModelSelect>
     <SettingsDisclosure title='手动填写模型标识'>
       <p className={css.hint}>用于目录中未列出的模型。修改标识后，推理等级恢复为默认设置。</p>
       <div className={css.columns}>
-        <label className={css.field}><span>Provider</span><Input className={css.input} value={provider} maxLength={200} disabled={disabled}
+        <label className={css.field}><span>Provider</span><Input className={css.input} value={provider} disabled={disabled}
           placeholder={fallback ? '继承默认 Provider' : 'Provider 标识'} onChange={event => onChange(event.target.value, model, '')} /></label>
-        <label className={css.field}><span>Model</span><Input className={css.input} value={model} maxLength={200} disabled={disabled}
+        <label className={css.field}><span>Model</span><Input className={css.input} value={model} disabled={disabled}
           placeholder={fallback ? '继承默认 Model' : 'Model 标识'} onChange={event => onChange(provider, event.target.value, '')} /></label>
       </div>
     </SettingsDisclosure>

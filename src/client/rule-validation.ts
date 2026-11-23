@@ -6,8 +6,7 @@ export function ruleIssues(rule: Rule, settings: Pick<StepReviewSettings, 'enabl
   if (!rule.id.trim()) issues.id = '填写规则名称。'
   else if (settings.rules.filter(item => item.id === rule.id).length > 1) issues.id = '规则名称与其他规则重复。'
   if (!rule.prompt.trim()) issues.prompt = '填写审查提示词。'
-  if (rule.patterns.length > 32 || rule.patterns.some(pattern => pattern.length > 512)) issues.patterns = '最多 32 条模式，每条最多 512 字符。'
-  else if (rule.matchMode !== 'always') {
+  if (rule.matchMode !== 'always') {
     if (rule.enabled && !rule.patterns.some(pattern => pattern.trim())) issues.patterns = '启用规则前至少填写一条匹配模式。'
     if (rule.enabled && rule.matchMode === 'regex') {
       for (const [index, pattern] of rule.patterns.entries()) {

@@ -44,7 +44,7 @@ function feedback(pending: Pending, stopped: boolean): string {
 
 export async function apply(ctx: Context, config: LiveConfig): Promise<void> {
   const coordinator = reviewCoordinator(ctx)
-  coordinator.retain(ctx)
+  coordinator.retain(ctx, config)
   await coordinator.ensurePreset(ctx)
   registerReviewCatalog(ctx)
   const lifetime = new AbortController()

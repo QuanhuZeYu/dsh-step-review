@@ -33,7 +33,7 @@ export function RuleEditor({ rule, disabled, onChange, onRemove, modelProps, iss
       <div className={css.ruleBody}>
         <div className={css.field}>
           <label htmlFor={id + '-name'}>规则名称</label>
-          <Input id={id + '-name'} className={css.input} value={rule.id} maxLength={80} disabled={disabled}
+          <Input id={id + '-name'} className={css.input} value={rule.id} disabled={disabled}
             aria-invalid={Boolean(issues.id)} aria-describedby={issues.id ? id + '-name-error' : undefined}
             onChange={event => onChange({ id: event.target.value })} />
           {issues.id && <p id={id + '-name-error'} className={css.error}>{issues.id}</p>}
@@ -51,7 +51,7 @@ export function RuleEditor({ rule, disabled, onChange, onRemove, modelProps, iss
         </div>}
         <div className={css.field}>
           <label htmlFor={id + '-prompt'}>审查提示词</label>
-          <textarea id={id + '-prompt'} className={css.textarea} rows={5} maxLength={12000} disabled={disabled}
+          <textarea id={id + '-prompt'} className={css.textarea} rows={5} disabled={disabled}
             aria-invalid={Boolean(issues.prompt)} aria-describedby={issues.prompt ? id + '-prompt-error' : undefined}
             value={rule.prompt} onChange={event => onChange({ prompt: event.target.value })} />
           {issues.prompt && <p id={id + '-prompt-error'} className={css.error}>{issues.prompt}</p>}

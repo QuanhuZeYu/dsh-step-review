@@ -57,6 +57,7 @@ export async function reviewCandidate(ctx: Context, settings: StepReviewSettings
   const materials = JSON.stringify({ candidate: subjectFor(rule, candidate), ...(settings.includeUserRequest ? { latestUserRequest: latestUserText(request) } : {}) })
   signal.throwIfAborted()
   const coordinator = reviewCoordinator(ctx)
+  const capacityPool = coordinator.reviewPool(ctx)
   const childId = SessionId(randomUUID())
   const controller = new AbortController()
   const combined = AbortSignal.any([signal, controller.signal])
@@ -83,7 +84,7 @@ export async function reviewCandidate(ctx: Context, settings: StepReviewSettings
   }, settings.timeoutMs)
   const work = async (): Promise<ReviewOutcome> => {
     coordinator.check(run)
-    starting = ctx.subagents.startActivation({ provider: 'spawn', parent, childId, delivery: 'caller',
+    starting = ctx.subagents.startActivation({ provider: 'spawn', parent, childId, delivery: 'caller', capacityPool,
       label: '逐步骤审查：' + rule.id, name: 'review-' + childId.replaceAll('-', '').slice(0, 24), category: 'review', agentPreset: settings.reviewerPreset.trim(), signal: combined,
       // 清除父模型的输出覆盖，让原生模型设置解析本次审查的输出参数。
       agentOptions: { provider, model, maxTokens: undefined,

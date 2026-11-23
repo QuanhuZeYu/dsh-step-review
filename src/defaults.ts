@@ -43,7 +43,7 @@ export const defaultRules: Rule[] = [
 ]
 export const defaults: StepReviewSettings = {
   enabled: false, provider: '', model: '', reasoningEffort: '', reviewerPreset: 'step-review-reader',
-  timeoutMs: 120000, maxReviewSteps: 12, maxCorrections: 3,
+  timeoutMs: 120000, maxReviewSteps: 12, maxConcurrentReviews: 16, maxCorrections: 3,
   includeUserRequest: false,
   rules: defaultRules,
 }

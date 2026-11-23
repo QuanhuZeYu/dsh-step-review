@@ -9,7 +9,7 @@
 
 ## 安装
 
-适用于 DSH 0.2.2-rc.5 的 Web 界面和 Node.js 24.9 或以上版本。从 [GitHub Releases](https://github.com/QuanhuZeYu/dsh-step-review/releases) 获取已构建的安装包：
+适用于 DSH 0.2.2-rc.5 的 Web 界面和 Node.js 24.9 或以上版本。独立审查池与配置上限修复目前需从 `main` 源码构建；下方 `v0.2.1` 安装包不包含这次更新。已发布的安装包可从 [GitHub Releases](https://github.com/QuanhuZeYu/dsh-step-review/releases) 获取：
 
 ~~~sh
 dsh plugin --profile web add https://github.com/QuanhuZeYu/dsh-step-review/releases/download/v0.2.1/dsh-step-review-0.2.1.tgz
@@ -23,7 +23,7 @@ dsh plugin --profile web add https://github.com/QuanhuZeYu/dsh-step-review/relea
 
 审查默认关闭。插件自动注册默认 preset `step-review-reader`，提供 `read`、`grep`、`glob` 取证工具和结构化裁决工具。自定义 preset 自行定义工具与权限，审查模型由下方模型设置独立指定。审查子会话独立运行，在支持目录分类的宿主中进入单独的“审查”入口，工作子 Agent 列表保留工作任务。新审查使用 review 分类和独立名称前缀；历史身份可确认时自动回填分类。spawn 后主候选等待裁决；超时、故障或达到订正上限时停止当前回合并留下反馈。
 
-「高级设置」可调整单次审查 Agent 的总期限（默认 120000 毫秒）和步骤上限（默认 12，范围 1–64）。已有超时覆盖值继续生效。审查输出沿用所选模型的原生设置，取证沿用原生工具行为；插件不再设置输出 token、响应缓冲或累计材料上限。旧配置中的容量字段不再参与运行。
+「高级设置」可调整单次审查 Agent 的总期限（默认 120000 毫秒）和步骤上限（默认 12）。已有超时覆盖值继续生效。默认值可按需调高；规则条数、匹配模式和提示词不另设容量上限。步骤、并发和订正次数接受安全整数；超时接受 1–2147483647 毫秒，这是 Node.js 计时器的有效范围。“审查并发上限”默认 16，在同一宿主的独立池中计数，与工作 Agent 容量分开。保存后新接纳读取当前容量；调低不会中断已运行审查，名额在释放完成后归还。池满时明确报容量不足。审查输出沿用所选模型的原生设置，取证沿用原生工具行为；插件不再设置输出 token、响应缓冲或累计材料上限。旧配置中的容量字段不再参与运行。
 
 模型与推理等级可按规则覆盖。规则继承模型时沿用全局推理等级；自选模型时使用该模型的提供方默认等级。显式选择“提供方默认”会保留为 `null`，空值沿用继承语义。
 
@@ -33,6 +33,6 @@ Release 规则先判断真实工具用途；源码、规则配置、开发探针
 
 命中规则时，相关回复、工具参数和取证内容会发送给所选审查模型。「提供最近一条用户请求」默认关闭。请根据数据敏感程度选择提供方。
 
-独立“审查”入口需要宿主支持目录分类；普通 DSH 0.2.2-rc.5 需先应用[配套宿主补丁](https://github.com/QuanhuZeYu/dsh-step-review/tree/main/patches)并重新构建。仅升级本插件可获得原生审查与新规则，目录分组由宿主提供。
+独立审查池需要宿主提供 `createCapacityPool` 接口。普通 DSH 0.2.2-rc.5 需应用[配套宿主补丁](https://github.com/QuanhuZeYu/dsh-step-review/tree/main/patches)，重新构建并重启宿主后再加载本插件产物；旧宿主会明确提示升级要求。目录分组由同一组补丁提供。
 
 [开发说明](docs/development.md) · [MIT 许可证](LICENSE) · [第三方声明](THIRD-PARTY-NOTICES)

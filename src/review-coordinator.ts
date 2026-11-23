@@ -1,5 +1,7 @@
-import type { Context } from '@deepseek-ai/cordis'
+import { symbols, type Context } from '@deepseek-ai/cordis'
 import type { FileSystem, FsObservation, FsTarget } from '@deepseek-ai/dsh-fs'
+import type { SubagentCapacityPool, SubagentRuntime } from '@deepseek-ai/dsh-subagent'
+import type { LiveConfig } from './config.js'
 import type { StreamChunk } from '@deepseek-ai/dsh-llm'
 import type { ToolExecution } from '@deepseek-ai/dsh-tools'
 import type { StepReviewSettings } from './types.js'
@@ -29,6 +31,9 @@ const coordinators = new WeakMap<object, ReviewCoordinator>()
 export class ReviewCoordinator {
   readonly runs = new Map<string, ReviewRun>()
   private users = 0
+  private readonly capacityConfigs = new Set<LiveConfig>()
+  private capacityPool: SubagentCapacityPool | undefined
+  private capacityRuntime: SubagentRuntime | undefined
   private readonly off: (() => void)[]
   private presetReady?: Promise<void>
   private unregisterPreset?: () => Promise<void>
@@ -100,9 +105,11 @@ export class ReviewCoordinator {
     ]
   }
 
-  retain(ctx: Context): void {
+  retain(ctx: Context, config: LiveConfig): void {
+    this.capacityConfigs.add(config)
     this.users++
     ctx.effect(() => async () => {
+      this.capacityConfigs.delete(config)
       if (--this.users > 0) return
       // 先取消全部审查；原生 activation 的收尾由各派发者等待。
       for (const run of this.runs.values()) run.controller.abort(new ReviewError('审查插件已卸载'))
@@ -111,6 +118,22 @@ export class ReviewCoordinator {
       await this.unregisterPreset?.()
       for (const off of this.off) off()
       coordinators.delete(ctx.root)
+    })
+  }
+
+  reviewPool(ctx: Context): SubagentCapacityPool {
+    if (typeof ctx.subagents.createCapacityPool !== 'function') {
+      throw new ReviewError('独立审查容量池需要升级宿主并重启服务，请应用配套容量池补丁')
+    }
+    const runtime = ctx.subagents
+    const identity = (Reflect.get(runtime, symbols.original) ?? runtime) as SubagentRuntime
+    if (this.capacityRuntime === identity && this.capacityPool !== undefined) return this.capacityPool
+    this.capacityRuntime = identity
+    return this.capacityPool = runtime.createCapacityPool(() => {
+      // 同宿主多处挂载共享一个池，采用各有效配置中的最小容量。
+      const limits = [...this.capacityConfigs].map(config => config.maxConcurrentReviews.get())
+      if (limits.length === 0) throw new ReviewError('审查插件已卸载')
+      return Math.min(...limits)
     })
   }
 
