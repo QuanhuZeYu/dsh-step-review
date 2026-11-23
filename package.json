@@ -1,6 +1,6 @@
 {
   "name": "dsh-step-review",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "在模型响应交付前按规则审查，拒绝后将建议反馈给原会话订正。",
   "type": "module",
   "main": "./lib/index.js",
@@ -23,6 +23,7 @@
     "lib",
     "src",
     "docs/development.md",
+    "patches",
     "cordis.patch.yml",
     "README.md",
     "LICENSE",

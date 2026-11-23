@@ -16,10 +16,8 @@ export const defaultRules: Rule[] = [
       "(?:body|input)[\\s\\S]{0,800}?(?:api[.]github[.]com|gh(?:[.]exe)?[\\s\\S]{0,80}?api)[\\s\\S]{0,320}?/releases",
       "(?:/repos/[^/\\s\"']+/[^/\\s\"']+/releases|(?:repos|releases)[.](?:create|update)Release)[\\s\\S]{0,800}?body",
       "body[\\s\\S]{0,800}?(?:/repos/[^/\\s\"']+/[^/\\s\"']+/releases|(?:repos|releases)[.](?:create|update)Release)",
-      "(?:write|edit|patch|writeFile|write_text|Set-Content|Out-File)[\\s\\S]{0,320}?(?:release(?:[-_ ]?(?:notes?|body))?|releases?[/\\\\][^\"'\\s]*)[^\"'\\r\\n]{0,100}[.](?:md|txt|markdown)",
-      "(?:release(?:[-_ ]?(?:notes?|body))?|releases?[/\\\\][^\"'\\s]*)[^\"'\\r\\n]{0,100}[.](?:md|txt|markdown)[\\s\\S]{0,160}?(?:write|edit|patch|>)",
     ],
-    prompt: '仅审查实际发布或准备的Release正文；开发材料中的示例直接通过。正文面向用户，保留产品变化、兼容性、限制和校验方法，拒绝测试、构建、评审等开发过程汇报。引用文件须读取实际待发布内容；缺失或不可读则拒绝。同一步先写后发须拆开，旧文件不能证明新正文。拒绝时给出具体问题和局部建议。',
+    prompt: '先判断本步是否实际执行 GitHub Release 的创建或正文更新（gh release create/edit 或等价 API 写操作）。匹配词仅为触发信号；仅讨论、引用命令，读取或审阅正文，写入草稿，构建、打包、生成校验和及检查附件的准备步骤，直接通过，不要求尚未执行的工具先产出文件，也不扩大为整个发布流程审查。实际发布时，只审查本次提交的 Release 正文：面向用户保留产品变化、兼容性、限制与校验方法，拒绝无关的测试、构建、评审过程汇报。正文直接给在参数中就审查该文本；通过 notes-file 等文件参数引用正文时须读取对应落盘文件，缺失或不可读才拒绝。同一步写入正文文件并实际发布时要求拆步；该要求不适用于单纯准备或评审。上传附件、只改标题或元数据而未提交正文时不审正文。拒绝须指出具体正文问题或实际发布所需文件缺口及局部建议。',
     provider: '', model: '', reasoningEffort: '',
   },
   {

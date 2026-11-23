@@ -9,10 +9,10 @@
 
 ## 安装
 
-适用于 DSH 0.2.2-rc.5 的 Web 界面和 Node.js 24.9 或以上版本。独立审查池与配置上限修复目前需从 `main` 源码构建；下方 `v0.2.1` 安装包不包含这次更新。已发布的安装包可从 [GitHub Releases](https://github.com/QuanhuZeYu/dsh-step-review/releases) 获取：
+适用于 DSH 0.2.2-rc.5 的 Web 界面和 Node.js 24.9 或以上版本。独立审查池需要宿主先应用配套补丁，完成构建和重启后再安装或升级插件。已构建的安装包可从 [GitHub Releases](https://github.com/QuanhuZeYu/dsh-step-review/releases) 获取：
 
 ~~~sh
-dsh plugin --profile web add https://github.com/QuanhuZeYu/dsh-step-review/releases/download/v0.2.1/dsh-step-review-0.2.1.tgz
+dsh plugin --profile web add https://github.com/QuanhuZeYu/dsh-step-review/releases/download/v0.2.2/dsh-step-review-0.2.2.tgz
 ~~~
 
 安装或升级均可使用上面的命令。安装后在 DSH Web 的「插件 → 逐步骤审查」打开配置。插件加载遵循 DSH 原生热更新流程；若宿主报告需要重启，再按提示处理。
@@ -27,7 +27,7 @@ dsh plugin --profile web add https://github.com/QuanhuZeYu/dsh-step-review/relea
 
 模型与推理等级可按规则覆盖。规则继承模型时沿用全局推理等级；自选模型时使用该模型的提供方默认等级。显式选择“提供方默认”会保留为 `null`，空值沿用继承语义。
 
-Release 规则先判断真实工具用途；源码、规则配置、开发探针及代理交接中引用的发布示例属于开发材料。规则覆盖 `gh release create/edit`、GitHub Releases API 正文和明显的 Release 正文文件写入。正文保留产品变化、兼容性、已知限制与用户校验方法，开发过程汇报留在开发记录。审查 Agent 必须读取 `--notes-file` 等引用；正文不可取证时拒绝。同一候选里先写文件再发布时，应拆成两个步骤，让审查读取已经落盘的发布正文。审查通过后、放行前会复核取证文件版本；变化时停止并要求重新审查。“载入默认规则”会替换当前规则列表，保存后生效。
+Release 规则只审查实际创建或更新正文的发布操作；写草稿、评阅正文、构建、打包和校验附件直接通过。实际发布引用正文文件时才要求读取落盘内容。Release 规则先判断真实工具用途；源码、规则配置、开发探针及代理交接中引用的发布示例属于开发材料。规则覆盖 `gh release create/edit` 和等价 GitHub Releases API 正文写入。正文保留产品变化、兼容性、已知限制与用户校验方法，开发过程汇报留在开发记录。审查 Agent 必须读取 `--notes-file` 等引用；正文不可取证时拒绝。同一候选里先写文件再发布时，应拆成两个步骤，让审查读取已经落盘的发布正文。审查通过后、放行前会复核取证文件版本；变化时停止并要求重新审查。“载入默认规则”会替换当前规则列表，保存后生效。
 
 内置默认规则包括提交说明、Release 正文、精炼表达、结论与证据相称、综合交付。后三项借鉴 [GPT with Taste](https://github.com/NB-Corp/gpt-with-taste) 的行为原则，要求拒绝指出具体问题及实际影响，保留必要事实、失败、限制与原始记录。证据未展示本身不构成拒绝理由。已有配置可在设置中载入默认规则，保留所需自定义内容后保存。
 
