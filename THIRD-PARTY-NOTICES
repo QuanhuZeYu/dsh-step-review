@@ -1,6 +1,6 @@
 客户端构建包含以下第三方代码。
 
-DeepSeek Harness
+DeepSeek Harness（包含原统计表 @deepseek-ai/dsh-experimental-client-ui-stats）
 
 MIT License
 

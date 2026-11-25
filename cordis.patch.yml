@@ -1,3 +1,5 @@
+- id: client-ui-stats
+  disabled: true
 - insert:
     - id: step-review
       name: dsh-step-review
