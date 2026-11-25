@@ -17,11 +17,7 @@
 .field [aria-invalid='true'] { border-color: var(--dsw-alias-state-error-primary, #b84141); }
 .textarea:disabled { opacity: 0.5; }
 .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.disclosure { min-width: 0; }
-.disclosureButton { width: 100%; justify-content: space-between; text-align: left; padding: 0 8px; color: var(--dsw-alias-label-secondary); }
 .disclosureBody { display: grid; gap: 12px; padding: 12px 0 0; min-width: 0; }
-.chevron, .chevronOpen { flex-shrink: 0; color: var(--dsw-alias-label-tertiary); transition: transform 120ms ease; }
-.chevronOpen { transform: rotate(180deg); }
 .rules { display: grid; gap: 10px; }
 .rule { min-width: 0; border: 0.5px solid var(--dsw-alias-border-l3); border-radius: var(--dsw-radius-md); }
 .rule[data-invalid='true'] { border-color: var(--dsw-alias-state-error-primary, #b84141); }

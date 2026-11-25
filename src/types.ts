@@ -21,6 +21,7 @@ export interface StepReviewSettings {
   maxConcurrentReviews: number
   maxCorrections: number
   includeUserRequest: boolean
+  stopOnEvidenceChange: boolean
   rules: Rule[]
 }
 export interface Candidate {
@@ -38,6 +39,7 @@ export interface ReviewRecord {
   version: 1
   /** 同一次候选从流式预览转为拒绝块时保留节点身份。 */
   previewId?: string
+  parentSessionId?: string
   turn: number
   step: number
   correction: number

@@ -21,6 +21,12 @@ export const defaultRules: Rule[] = [
     provider: '', model: '', reasoningEffort: '',
   },
   {
+    id: 'unnecessary-backup', enabled: true, target: 'all', matchMode: 'contains',
+    patterns: ['备份', '快照', '副本', '另存', '复制', '拷贝', 'backup', 'back-up', 'back up', 'snapshot', '.bak', '.orig', '.old', 'copy', 'cp '],
+    prompt: '仅审查实际执行或明确计划的额外备份。普通可逆编辑或已有可靠恢复来源时，拒绝仅为“安全起见”创建副本。用户明确要求、备份任务或确有必要的恢复副本可通过。讨论、读取、恢复、清理既有备份，以及正常复制、构建和Git操作可通过。不补充取证；无法确定无必要性则通过，拒绝时指出动作与局部建议。',
+    provider: '', model: '', reasoningEffort: '',
+  },
+  {
     id: 'clear-writing', enabled: true, target: 'text', matchMode: 'contains',
     patterns: ['不代表', '不等于', '并不意味着', '并不代表', '这不是', '而不是', '按照要求', '按要求', '无对应 issue', '没有修改', '保持不变', '免责声明', '综上所述', '总而言之', '值得注意的是'],
     prompt: '检查面向用户的文本。仅当自我表态、合规复述、无关否定、重复解释或空泛结尾妨碍理解、决定或行动时拒绝，指出具体片段和影响，建议局部删除。保留必要事实、术语、引用、失败、限制和恢复方法。关键词只是触发信号，个人偏好与假想异议不构成拒绝理由。',
@@ -41,7 +47,7 @@ export const defaultRules: Rule[] = [
 ]
 export const defaults: StepReviewSettings = {
   enabled: false, provider: '', model: '', reasoningEffort: '', reviewerPreset: 'step-review-reader',
-  timeoutMs: 120000, maxReviewSteps: 12, maxConcurrentReviews: 16, maxCorrections: 3,
-  includeUserRequest: false,
+  timeoutMs: 120000, maxReviewSteps: 128, maxConcurrentReviews: 16, maxCorrections: 3,
+  includeUserRequest: false, stopOnEvidenceChange: false,
   rules: defaultRules,
 }

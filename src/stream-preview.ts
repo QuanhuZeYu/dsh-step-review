@@ -2,7 +2,7 @@
 import { randomUUID } from 'node:crypto'
 import type { StreamChunk } from '@deepseek-ai/dsh-llm'
 import { appendPluginRecord, type Session } from '@deepseek-ai/dsh-session'
-import { previewRecordType, type PreviewPart, type PreviewPhase, type PreviewRecord } from './preview-types.js'
+import { previewRecordType, type PreviewPart, type PreviewPhase, type PreviewRecord, type PreviewTiming } from './preview-types.js'
 import type { Candidate } from './types.js'
 
 const FLUSH_INTERVAL_MS = 50
@@ -25,17 +25,27 @@ export class ReviewPreview {
   private readonly pending = new Map<number, PartBuffer>()
   private pendingSize = 0
   private timer?: ReturnType<typeof setTimeout>
-  private backgroundFailure?: { error: unknown }
+  private disabled = false
+  private readonly startedAt = Date.now()
+  private firstTokenAt?: number
+  private finishedAt?: number
+  private releasedAt?: number
+  private outputTokens?: number
 
-  constructor(private readonly session: Session, private readonly turn: number, private readonly step: number) {
+  constructor(private readonly session: Session, private readonly turn: number, private readonly step: number, private readonly warn: (error: unknown) => void = () => {}) {
     this.append({ phase: 'generating' })
   }
 
-  /** 仅拷贝展示字段，忽略 usage、finish、工具 id 与提供方元数据。 */
+  /** 保存可见增量并采样首个有效内容；usage 由调用方在流结束后提供。 */
   push(chunk: StreamChunk): void {
-    this.throwBackgroundFailure()
-    if (this.closed || this.phase !== 'generating') return
+    if (this.disabled || this.closed || this.phase !== 'generating') return
+    const content = chunk.type === 'text-delta' || chunk.type === 'reasoning-delta' ? chunk.text
+      : chunk.type === 'tool-call-delta' ? chunk.argumentsDelta || chunk.name : undefined
+    if (this.firstTokenAt === undefined && content) this.firstTokenAt = Date.now()
     switch (chunk.type) {
+      case 'finish':
+        this.finishModel()
+        break
       case 'block-start':
         if (!this.parts.has(chunk.index) && this.isVisible(chunk.blockType)) {
           this.update(chunk.index, chunk.blockType, '')
@@ -67,22 +77,29 @@ export class ReviewPreview {
     else if (this.timer === undefined) {
       this.timer = setTimeout(() => {
         this.timer = undefined
-        if (this.closed || this.phase !== 'generating') return
-        try { this.flush() } catch (error) { this.backgroundFailure = { error } }
+        if (this.disabled || this.closed || this.phase !== 'generating') return
+        try { this.flush() } catch (error) { this.disable(error) }
       }, FLUSH_INTERVAL_MS)
       this.timer.unref()
     }
   }
 
+  /** 记录模型完成采样，沿用上游提供的真实输出 token 用量。 */
+  finishModel(outputTokens?: number): void {
+    this.finishedAt ??= Date.now()
+    if (outputTokens !== undefined) this.outputTokens = outputTokens
+  }
+
   /** 首次审核保存完整快照；后续规则只写阶段与规则标识。 */
-  reviewing(candidate: Candidate, ruleId?: string): void {
+  reviewing(candidate: Candidate, ruleId?: string, reviewerSessionId?: string): void {
+    this.finishModel()
     this.stopTimer()
-    this.throwBackgroundFailure()
     if (this.closed || this.isTerminal()) return
     this.flush()
     this.append({
       phase: 'reviewing',
       ...(ruleId === undefined ? {} : { ruleId }),
+      ...(reviewerSessionId === undefined ? {} : { reviewerSessionId, parentSessionId: this.session.id }),
       ...(this.phase === 'generating' ? {
         snapshot: this.materialize(this.parts),
         candidate: { text: candidate.text, tools: candidate.tools.map(tool => ({ name: tool.name, arguments: tool.arguments })) },
@@ -101,12 +118,10 @@ export class ReviewPreview {
     this.finish('cancelled')
   }
 
-  /** finally 中调用；即使已有后台写入错误，也先尝试补全取消终态。 */
+  /** 展示写入失败只关闭展示，业务结果由主关口决定。 */
   close(): void {
     this.stopTimer()
     if (this.closed) return
-    const failure = this.backgroundFailure
-    this.backgroundFailure = undefined
     try {
       if (!this.isTerminal()) this.cancel()
     } finally {
@@ -116,14 +131,13 @@ export class ReviewPreview {
       this.ended.clear()
       this.pendingSize = 0
     }
-    if (failure) throw failure.error
   }
 
   private finish(phase: 'released' | 'cancelled'): void {
     this.stopTimer()
-    this.throwBackgroundFailure()
     if (this.closed || this.isTerminal()) return
     this.flush()
+    if (phase === 'released') this.releasedAt = Date.now()
     this.append({ phase })
     this.phase = phase
     this.parts.clear()
@@ -162,10 +176,20 @@ export class ReviewPreview {
     }))
   }
 
-  private append(data: Pick<PreviewRecord, 'phase' | 'parts' | 'snapshot' | 'candidate' | 'ruleId'>): void {
-    appendPluginRecord(this.session, previewRecordType, {
-      version: 1, previewId: this.id, turn: this.turn, step: this.step, ...data,
-    })
+  private timing(): PreviewTiming {
+    return { startedAt: this.startedAt, ...(this.firstTokenAt === undefined ? {} : { firstTokenAt: this.firstTokenAt }),
+      ...(this.finishedAt === undefined ? {} : { finishedAt: this.finishedAt }),
+      ...(this.releasedAt === undefined ? {} : { releasedAt: this.releasedAt }),
+      ...(this.outputTokens === undefined ? {} : { outputTokens: this.outputTokens }) }
+  }
+
+  private append(data: Pick<PreviewRecord, 'phase' | 'parts' | 'snapshot' | 'candidate' | 'ruleId' | 'reviewerSessionId' | 'parentSessionId' | 'timing'>): void {
+    if (this.disabled) return
+    try {
+      appendPluginRecord(this.session, previewRecordType, {
+        version: 1, previewId: this.id, turn: this.turn, step: this.step, ...data, timing: this.timing(),
+      })
+    } catch (error) { this.disable(error) }
   }
 
   private stopTimer(): void {
@@ -173,10 +197,15 @@ export class ReviewPreview {
     this.timer = undefined
   }
 
-  private throwBackgroundFailure(): void {
-    const failure = this.backgroundFailure
-    this.backgroundFailure = undefined
-    if (failure) throw failure.error
+  private disable(error: unknown): void {
+    if (this.disabled) return
+    this.disabled = true
+    this.stopTimer()
+    this.parts.clear()
+    this.pending.clear()
+    this.ended.clear()
+    this.pendingSize = 0
+    this.warn(error)
   }
 
   private isTerminal(): boolean {

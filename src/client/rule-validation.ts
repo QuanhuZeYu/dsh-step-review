@@ -4,7 +4,7 @@ export interface RuleIssues { id?: string; prompt?: string; patterns?: string; m
 export function ruleIssues(rule: Rule, settings: Pick<StepReviewSettings, 'enabled' | 'provider' | 'model' | 'rules'>): RuleIssues {
   const issues: RuleIssues = {}
   if (!rule.id.trim()) issues.id = '填写规则名称。'
-  else if (settings.rules.filter(item => item.id === rule.id).length > 1) issues.id = '规则名称与其他规则重复。'
+  else if (rule.enabled && settings.rules.filter(item => item.enabled && item.id === rule.id).length > 1) issues.id = '规则名称与其他启用规则重复。'
   if (!rule.prompt.trim()) issues.prompt = '填写审查提示词。'
   if (rule.matchMode !== 'always') {
     if (rule.enabled && !rule.patterns.some(pattern => pattern.trim())) issues.patterns = '启用规则前至少填写一条匹配模式。'

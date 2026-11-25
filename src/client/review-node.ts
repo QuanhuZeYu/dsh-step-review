@@ -2,6 +2,7 @@
 import type { ConversationNodeDefinition } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import { previewRecordType, type PreviewPart, type PreviewPhase, type PreviewRecord } from '../preview-types.js'
 import type { Candidate, ReviewRecord, RuleVerdict } from '../types.js'
+import { previewTimingOf, type PreviewTiming } from './preview-timing.js'
 
 export interface PreviewData {
   id: string
@@ -11,15 +12,23 @@ export interface PreviewData {
   parts: PreviewPart[]
   incomplete: boolean
   ruleId?: string
+  reviewerSessionId?: string
+  parentSessionId?: string
+  timing?: PreviewTiming
 }
-export interface ReviewCardData {
+export interface ReviewAttemptData {
   injection: string
   record?: ReviewRecord
   candidate?: Candidate
   candidateIncomplete: boolean
   results: RuleVerdict[]
   stopped: boolean
+  rejectedAt?: number
   preview?: PreviewData
+}
+export interface ReviewCardData extends ReviewAttemptData {
+  /** 同一步先前尝试只在历史中展示，模型注入与原始日志保持完整。 */
+  history?: ReviewAttemptData[]
 }
 declare module '@deepseek-ai/dsh-client-ui-chat/client' {
   interface ChatNodeDataMap { 'step-review': ReviewCardData }
@@ -48,6 +57,7 @@ function reviewOf(source: unknown): ReviewRecord | undefined {
     || !coordinate(review.correction) || typeof review.stopped !== 'boolean' || !Array.isArray(review.results)
     || !review.results.every(resultOf) || (review.candidate !== undefined && !candidateOf(review.candidate))
     || (review.error !== undefined && typeof review.error !== 'string')
+    || (review.parentSessionId !== undefined && (typeof review.parentSessionId !== 'string' || !review.parentSessionId))
     || (review.previewId !== undefined && (typeof review.previewId !== 'string' || !review.previewId))) return undefined
   return review as unknown as ReviewRecord
 }
@@ -63,7 +73,9 @@ function previewOf(value: unknown): PreviewRecord | undefined {
     || (value.parts !== undefined && (!Array.isArray(value.parts) || !value.parts.every(partOf)))
     || (value.snapshot !== undefined && (!Array.isArray(value.snapshot) || !value.snapshot.every(partOf)))
     || (value.candidate !== undefined && !candidateOf(value.candidate))
-    || (value.ruleId !== undefined && typeof value.ruleId !== 'string')) return undefined
+    || (value.ruleId !== undefined && typeof value.ruleId !== 'string')
+    || (value.parentSessionId !== undefined && (typeof value.parentSessionId !== 'string' || !value.parentSessionId))
+    || (value.reviewerSessionId !== undefined && (typeof value.reviewerSessionId !== 'string' || !value.reviewerSessionId))) return undefined
   return value as unknown as PreviewRecord
 }
 export function cardData(source: unknown, injection: string): ReviewCardData {
@@ -86,7 +98,7 @@ export function cardData(source: unknown, injection: string): ReviewCardData {
   return { injection, candidate, candidateIncomplete: position >= 0 && !candidate,
     results, stopped: head.includes('自动订正已停止') }
 }
-interface ReviewState extends ReviewCardData { seq: number }
+interface ReviewState extends ReviewCardData { seq: number; attemptId: string }
 type MatchEvent = Parameters<ConversationNodeDefinition['match']>[0]
 function eventPreview(event: MatchEvent): PreviewRecord | undefined {
   // 信息记录不属于已发布 SessionEventMap；仅认领本插件命名与经过校验的数据。
@@ -98,9 +110,6 @@ function isInjection(event: MatchEvent): event is Extract<MatchEvent, { type: 'u
   const source: unknown = event.data.source
   return objectOf(source) && source.kind === 'step-review'
 }
-function previewIdOf(source: unknown): string | undefined {
-  return reviewOf(source)?.previewId
-}
 function mergeParts(current: PreviewPart[], parts: PreviewPart[]): PreviewPart[] {
   const merged = new Map(current.map(part => [part.index, part]))
   for (const part of parts) {
@@ -110,39 +119,56 @@ function mergeParts(current: PreviewPart[], parts: PreviewPart[]): PreviewPart[]
   }
   return [...merged.values()].sort((left, right) => left.index - right.index)
 }
+/** 同一步的当前尝试替换展示，先前尝试只归档一次；迟到清理不重新激活旧尝试。 */
+function beginAttempt(state: ReviewState | undefined, attemptId: string): ReviewState | undefined {
+  if (!state || state.attemptId === attemptId) return state
+  if (state.history?.some(item => (item.preview?.id ?? item.record?.previewId) === attemptId)) return undefined
+  const { seq: anchor, attemptId: previousId, history = [], ...previous } = state
+  const preview = previous.preview
+  const archived = preview && !previous.injection && (preview.phase === 'generating' || preview.phase === 'reviewing')
+    ? { ...previous, preview: { ...preview, phase: 'interrupted' as const } } : previous
+  return { seq: anchor, attemptId, injection: '', candidateIncomplete: false, results: [], stopped: false,
+    history: [...history, archived] }
+}
 function applyEvent(state: ReviewState | undefined, event: MatchEvent): ReviewState {
+  const value = eventPreview(event)
+  const record = isInjection(event) ? reviewOf(event.data.source) : undefined
+  const attemptId = value?.previewId ?? record?.previewId ?? 'legacy:' + String(event.seq)
+  const current = beginAttempt(state, attemptId)
+  if (state && !current) return state
   if (isInjection(event)) {
     const injection = event.data.content.filter(block => block.type === 'text').map(block => block.text).join('\n')
-    return { seq: state?.seq ?? event.seq, ...cardData(event.data.source, injection), preview: state?.preview }
+    return { seq: current?.seq ?? event.seq, attemptId, ...cardData(event.data.source, injection),
+      rejectedAt: event.time, preview: current?.preview, history: current?.history }
   }
-  const value = eventPreview(event)
   if (!value) throw new Error('待审节点需要有效的预览或订正记录')
-  // 拒绝为本节点最终展示；后续清理记录不能覆盖已经保存的反馈。
-  if (state?.injection) return state
-  const previous = state?.preview
-  if (state && previous && (previous.turn !== value.turn || previous.step !== value.step)) return state
-  if (state && (previous?.phase === 'released' || previous?.phase === 'cancelled')) return state
+  // 拒绝为本次尝试最终展示；随后取消清理不能覆盖已保存的反馈。
+  if (current?.injection) return current
+  const previous = current?.preview
+  if (current && (previous?.phase === 'released' || previous?.phase === 'cancelled')) return current
   const parts = value.snapshot ? mergeParts([], value.snapshot) : mergeParts(previous?.parts ?? [], value.parts ?? [])
-  return { seq: state?.seq ?? event.seq, injection: '', candidateIncomplete: false, results: [], stopped: false,
-    candidate: value.candidate ?? state?.candidate,
+  return { seq: current?.seq ?? event.seq, attemptId, injection: '', candidateIncomplete: false, results: [], stopped: false,
+    candidate: value.candidate ?? current?.candidate, history: current?.history,
     preview: { id: value.previewId, turn: value.turn, step: value.step, phase: value.phase, parts,
       incomplete: value.snapshot ? false : previous?.incomplete ?? (value.phase !== 'generating' || !!value.parts?.length),
-      ruleId: value.ruleId ?? previous?.ruleId } }
+      ruleId: value.ruleId ?? previous?.ruleId, reviewerSessionId: value.reviewerSessionId ?? previous?.reviewerSessionId,
+      parentSessionId: value.parentSessionId ?? previous?.parentSessionId,
+      timing: previewTimingOf(value.timing) ?? previous?.timing } }
 }
 export const reviewDefinition: ConversationNodeDefinition<ReviewState> = {
   kind: 'step-review-injection', target: 'chat',
   match: event => {
     const preview = eventPreview(event)
-    if (preview) return { id: 'preview:' + preview.previewId, role: 'start' }
+    if (preview) return { id: 'step:' + preview.turn + ':' + preview.step, role: 'start' }
     if (!isInjection(event)) return null
-    const previewId = previewIdOf(event.data.source)
-    return { id: previewId ? 'preview:' + previewId : 'legacy:' + String(event.data.id), role: 'start', exclusive: true }
+    const record = reviewOf(event.data.source)
+    return { id: record ? 'step:' + record.turn + ':' + record.step : 'legacy:' + String(event.data.id), role: 'start', exclusive: true }
   },
   start: (_context, match) => applyEvent(undefined, match.event),
   update: (context, match) => applyEvent(context.state, match.event),
   buildViewNode: context => {
     if (!context.state) return null
-    const { seq, ...data } = context.state
+    const { seq, attemptId, ...data } = context.state
     const location = context.start?.location ?? { kind: 'unresolved' as const }
     const preview = data.preview
     const closed = location.kind === 'step' ? location.step.status === 'closed' || location.turn.status === 'closed'
@@ -150,7 +176,8 @@ export const reviewDefinition: ConversationNodeDefinition<ReviewState> = {
     if (preview && !data.injection && closed && (preview.phase === 'generating' || preview.phase === 'reviewing')) {
       data.preview = { ...preview, phase: 'interrupted' }
     }
+    const hasRejection = Boolean(data.injection || data.history?.some(attempt => attempt.injection))
     return { key: context.key, id: context.id, kind: 'step-review', target: 'chat', anchorSeq: seq,
-      location, visibility: preview?.phase === 'released' && !data.injection ? 'hidden' : 'visible', data }
+      location, groupTree: 'turn', visibility: preview?.phase === 'released' && !hasRejection ? 'hidden' : 'visible', data }
   },
 }

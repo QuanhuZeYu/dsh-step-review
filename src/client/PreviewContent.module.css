@@ -11,11 +11,16 @@
 .card[data-phase='reviewing'] { border-color: var(--dsw-alias-button-info-fill, #5088d8); }
 .card[data-phase='rejected'] { border-color: var(--dsw-alias-state-error-primary, #ce6544); }
 .header { padding: 14px 18px; }
+.card[data-phase='released'] { margin: 8px 0; border-left-width: 1px; }
+.card[data-phase='released'] .header { padding: 8px 12px; }
+.card[data-phase='released'] .titleRow { font-size: 12px; }
+.timing { margin: 7px 0 0; color: var(--dsw-alias-label-secondary, #888); font-size: 12px; line-height: 1.6; font-variant-numeric: tabular-nums; }
 .titleRow { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; justify-content: space-between; }
 .meta, .hint { color: var(--dsw-alias-label-secondary, #888); font-size: 12px; }
 .meta { margin: 7px 0 0; }
 .body { padding: 14px 18px; border-top: 1px solid var(--dsw-alias-border-l2, #8883); min-width: 0; }
 .content { display: flex; flex-direction: column; gap: 12px; min-width: 0; overflow-wrap: anywhere; }
 .hint { margin: 0; }
+.summary { margin: 8px 0 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
 .reasoning { padding: 8px 0 0; }
 .tools { display: flex; flex-direction: column; gap: 8px; min-width: 0; }

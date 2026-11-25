@@ -1,7 +1,7 @@
 /** 清晰区分被拒候选与对应注入，内容复用 DSH 原生渲染。 */
 import type { CSSProperties } from 'react'
 import { useId, useMemo } from 'react'
-import { MarkdownText, MarkdownDelegateProvider } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, MarkdownText, MarkdownDelegateProvider } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { ChatNodeViewProps } from '@deepseek-ai/dsh-client-ui-chat/client'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import { markdownLabels } from '@deepseek-ai/dsh-client-ui-tool/src/client/tool/models/primitive-labels.ts'
@@ -9,47 +9,84 @@ import { CandidateTool } from './CandidateTool.js'
 import { InjectionContent } from './InjectionContent.js'
 import { InlineDisclosure } from './InlineDisclosure.js'
 import { PreviewContent } from './PreviewContent.js'
+import { ReviewTiming } from './ReviewTiming.js'
+import type { ReviewSessionTarget } from './ReviewSessionDialog.js'
 import css from './PreviewContent.module.css'
 const section: CSSProperties = { padding: '14px 18px', borderTop: '1px solid var(--dsw-alias-border-l2, #8883)', minWidth: 0 }
 const label: CSSProperties = { margin: '0 0 8px', fontSize: 13, fontWeight: 600 }
 const muted: CSSProperties = { color: 'var(--dsw-alias-label-secondary, #888)', fontSize: 12 }
-type Props = Omit<ChatNodeViewProps<'step-review'>, 't'> & PropsLocale<'conversation'>
-export function ReviewNode({ node, cwd, openFile, useDisclosure, t }: Props) {
+type Props = Omit<ChatNodeViewProps<'step-review'>, 't'> & PropsLocale<'conversation'> & {
+  openReview: (target: ReviewSessionTarget) => void
+}
+export function ReviewNode(props: Props) {
+  const { node } = props
+  const history = node.data.history ?? []
+  const current = node.data
+  function renderAttempt(attempt: typeof current, index: number) {
+    const key = attempt.preview?.id ?? attempt.record?.previewId ?? String(index)
+    return <ReviewAttempt key={key} {...props} node={{ ...node, key: String(node.key) + ':' + key, data: attempt }} />
+  }
+  const cards = history.flatMap((attempt, index) => attempt.injection ? [renderAttempt(attempt, index)] : [])
+  if (current.preview?.phase !== 'released' || current.injection) cards.push(renderAttempt(current, history.length))
+  return <div data-step-review-group>
+    {cards}
+    {history.some(attempt => !attempt.injection) && <InlineDisclosure title='其他审查尝试'>
+      {history.map((attempt, index) => attempt.injection ? null : renderAttempt(attempt, index))}
+    </InlineDisclosure>}
+  </div>
+}
+function ReviewAttempt({ node, cwd, openFile, useDisclosure, t, openReview }: Props) {
   const id = useId()
   const labels = useMemo(() => markdownLabels(t), [t])
   const { record, candidate, results, injection, stopped, preview } = node.data
-  const failed = record?.error || injection.startsWith('逐步骤审查发生故障')
+  const failed = record?.error || (injection.startsWith('逐步骤审查发生故障') ? '审查失败，展开查看完整反馈。' : undefined)
   const title = failed ? '审查故障 · 本步已拦截' : '审查拒绝 · 本步已拦截'
   const rejected = results.filter(result => result.verdict.decision === 'reject')
+  const originSessionId = record?.parentSessionId ?? preview?.parentSessionId
+  const reviewed = results.flatMap<ReviewSessionTarget>(result => {
+    if (result.reviewerSessionId) return [{ id: result.reviewerSessionId, ruleId: result.ruleId, originSessionId }]
+    const startedAfter = preview?.timing?.finishedAt
+    if (startedAfter === undefined || node.data.rejectedAt === undefined) return []
+    return [{ ruleId: result.ruleId, startedAfter, finishedBefore: node.data.rejectedAt, verdict: result.verdict }]
+  })
+  if (preview?.reviewerSessionId && preview.ruleId && !reviewed.some(target => 'id' in target && target.id === preview.reviewerSessionId)) {
+    reviewed.push({ id: preview.reviewerSessionId, ruleId: preview.ruleId, originSessionId })
+  }
+  const links = reviewed.map((target, index) => <Button key={index} size='sm' variant='outline' onClick={() => openReview(target)}>
+    打开审查会话 · {target.ruleId}
+  </Button>)
   const location = node.location
   const turn = record?.turn ?? (location.kind === 'turn' || location.kind === 'step' ? location.turn.turn : undefined)
   const step = record?.step ?? (location.kind === 'step' ? location.step.step : undefined)
-  if (preview && !injection) {
-    const title = preview.phase === 'generating' ? '生成中 · 待审' : preview.phase === 'reviewing' ? '审核中'
-      : preview.phase === 'cancelled' ? '已停止' : preview.phase === 'interrupted' ? '已中断' : '已通过'
-    return <MarkdownDelegateProvider openFile={openFile}>
-      <article className={css.card} data-phase={preview.phase} aria-labelledby={id} data-step-review-card>
+  const showPreview = preview && !injection
+  const previewTitle = preview?.phase === 'generating' ? '生成中 · 待审' : preview?.phase === 'reviewing' ? '审核中'
+      : preview?.phase === 'cancelled' ? '已停止' : preview?.phase === 'interrupted' ? '已中断' : '审查已通过'
+  return <MarkdownDelegateProvider openFile={openFile}>
+    {showPreview ? <article className={css.card} data-phase={preview.phase} aria-labelledby={id} data-step-review-card>
         <header className={css.header}>
           <div className={css.titleRow}>
-            <strong id={id}>{title}</strong>
+            <strong id={id}>{previewTitle}</strong>
             <span className={css.meta}>第 {preview.turn} 轮 · 步骤 {preview.step}</span>
           </div>
           {preview.phase === 'reviewing' && preview.ruleId && <p className={css.meta}>规则：{preview.ruleId}</p>}
+          <ReviewTiming timing={preview.timing} />
+          {links}
         </header>
+        {preview.phase !== 'released' && <InlineDisclosure key={'preview:' + preview.id + (preview.phase === 'generating' || preview.phase === 'reviewing' ? ':active' : ':closed')} title='查看本次待审内容' defaultOpen={preview.phase === 'generating' || preview.phase === 'reviewing'}>
         <section className={css.body} aria-label='本步待审内容'>
           <PreviewContent preview={preview} candidate={candidate} identity={String(node.key)} cwd={cwd} openFile={openFile} useDisclosure={useDisclosure} t={t} />
         </section>
-      </article>
-    </MarkdownDelegateProvider>
-  }
-  return <MarkdownDelegateProvider openFile={openFile}>
-    <article className={css.card} data-phase='rejected' aria-labelledby={id} data-step-review-card>
+        </InlineDisclosure>}
+      </article> : <article className={css.card} data-phase='rejected' aria-labelledby={id} data-step-review-card>
       <header style={{ padding: '14px 18px' }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap', justifyContent: 'space-between' }}>
           <strong id={id}>{title}</strong>
           <span style={muted}>{turn !== undefined ? '第 ' + turn + ' 轮' + (step !== undefined ? ' · 步骤 ' + step : '') + (record ? ' · 第 ' + record.correction + ' 次反馈' : '') : '历史审查记录'}</span>
         </div>
         <p style={{ ...muted, margin: '7px 0 0' }}>{stopped ? '自动订正已停止，等待处理。' : '订正反馈已注入原会话，要求重新生成本步。'}</p>
+        {(failed || rejected[0]) && <p className={css.summary}>{failed || rejected[0].verdict.reason}</p>}
+        <ReviewTiming timing={preview?.timing} />
+        {links}
       </header>
       <section style={section} aria-label='本步被拒内容'>
         <h4 style={label}>本步生成的内容</h4>
@@ -75,6 +112,6 @@ export function ReviewNode({ node, cwd, openFile, useDisclosure, t }: Props) {
           <InjectionContent injection={injection} identity={String(node.key)} cwd={cwd} openFile={openFile} useDisclosure={useDisclosure} t={t} />
         </InlineDisclosure>
       </section>
-    </article>
+    </article>}
   </MarkdownDelegateProvider>
 }

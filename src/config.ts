@@ -25,6 +25,7 @@ export const Config = z.object({
   maxConcurrentReviews: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(defaults.maxConcurrentReviews).description('独立审查池的最大并发数').volatile(),
   maxCorrections: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(defaults.maxCorrections).description('单步骤自动订正次数').volatile(),
   includeUserRequest: z.boolean().default(false).description('向审查器提供最近一条完整用户请求').volatile(),
+  stopOnEvidenceChange: z.boolean().default(defaults.stopOnEvidenceChange).description('取证文件变化时中止，默认关闭；开启后放行前复核审查读取的文件版本').volatile(),
   rules: z.array(rule).default(defaults.rules).description('机械匹配与审查规则').volatile(),
 })
 export function snapshot(config: LiveConfig): StepReviewSettings {

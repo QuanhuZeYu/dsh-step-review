@@ -1,10 +1,10 @@
 /** 原生插件设置入口，通过带修订号的 configForms 原子保存。 */
 import type { Context } from '@deepseek-ai/cordis'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
 import type { ModelCatalog } from '@deepseek-ai/dsh-api-remotes/client'
-import type { AgentPresetRoster } from '@deepseek-ai/dsh-agent-preset-registry/types'
 import type {} from '@deepseek-ai/dsh-client-ui-model-selection/client'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
@@ -14,6 +14,10 @@ import { defaults } from '../defaults.js'
 import { maxTimeoutMs } from '../settings-limits.js'
 import { reviewDefinition } from './review-node.js'
 import { ReviewNode } from './ReviewCard.js'
+import { ReviewSessionDialog, type ReviewSessionTarget } from './ReviewSessionDialog.js'
+import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
+import { registerReviewCatalog } from './ReviewCatalog.js'
+import { registerCatalogSidebar } from './catalog-sidebar.js'
 import { RouteEditor } from './RouteEditor.js'
 import { RuleEditor } from './RuleEditor.js'
 import { ruleIssues, type RuleIssues } from './rule-validation.js'
@@ -22,18 +26,19 @@ import css from './SettingsEditor.module.css'
 import type { Rule, StepReviewSettings } from '../types.js'
 
 export const name = 'step-review-settings'
-export const inject = ['slots', 'configForms', 'settingsSchema', 'remote', 'remote.session', 'uiConversation']
+export const inject = ['slots', 'configForms', 'settingsSchema', 'remote', 'remote.session', 'uiConversation', 'sessions', 'workspaces', 'uiWorkspace']
 // 新客户端可能先于服务端模块更新，旧描述不会包含新增字段。
-type OptionalSettings = 'reviewerPreset' | 'maxReviewSteps' | 'maxConcurrentReviews'
+type OptionalSettings = 'reviewerPreset' | 'maxReviewSteps' | 'maxConcurrentReviews' | 'stopOnEvidenceChange'
 type SettingsFormValue = Omit<StepReviewSettings, OptionalSettings> & Partial<Pick<StepReviewSettings, OptionalSettings>>
 
 function formValue(value: SettingsFormValue): StepReviewSettings {
   const current = Object.fromEntries(Object.entries(value).filter(([key]) => Object.hasOwn(defaults, key)))
   return structuredClone({ ...defaults, ...current, reviewerPreset: value.reviewerPreset ?? defaults.reviewerPreset,
-    maxReviewSteps: value.maxReviewSteps ?? defaults.maxReviewSteps, maxConcurrentReviews: value.maxConcurrentReviews ?? defaults.maxConcurrentReviews })
+    maxReviewSteps: value.maxReviewSteps ?? defaults.maxReviewSteps, maxConcurrentReviews: value.maxConcurrentReviews ?? defaults.maxConcurrentReviews,
+    stopOnEvidenceChange: value.stopOnEvidenceChange ?? defaults.stopOnEvidenceChange })
 }
 function validation(value: SettingsFormValue, issues: RuleIssues[]): string {
-  if (!value.reviewerPreset?.trim()) return '填写审查 Agent 的 preset id。'
+  if (value.reviewerPreset !== defaults.reviewerPreset) return '审查 Agent 仅支持 step-review-reader。'
   for (const [index, rule] of value.rules.entries()) {
     const first = Object.values(issues[index])[0]
     if (first) return (rule.id || '未命名规则') + '：' + first
@@ -55,7 +60,6 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<SettingsFor
   const [catalogLoading, setCatalogLoading] = useState(true)
   const [catalogMessage, setCatalogMessage] = useState('')
   const [catalogVersion, setCatalogVersion] = useState(0)
-  const [presets, setPresets] = useState<AgentPresetRoster>()
   const [presetMessage, setPresetMessage] = useState('正在读取 preset 目录…')
   const [resetRules, setResetRules] = useState(false)
   const ruleKeys = useRef<string[]>([])
@@ -80,10 +84,10 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<SettingsFor
     let active = true
     void Promise.resolve().then(() => ctx.remote.agentPresets.list()).then(result => {
       if (!active) return
-      if (!result.ok) { setPresetMessage('preset 目录不可用，请填写已配置的 preset id。'); return }
-      setPresets(result.value)
-      setPresetMessage(result.value.presets.some(item => !item.broken) ? '可从原生目录选择或直接填写 preset id。' : '目录中没有可用 preset，请填写已配置的 preset id。')
-    }).catch(() => { if (active) setPresetMessage('preset 目录读取失败，请填写已配置的 preset id。') })
+      if (!result.ok) { setPresetMessage('preset 目录暂不可用，审查仅使用 step-review-reader。'); return }
+      setPresetMessage(result.value.presets.some(item => item.id === defaults.reviewerPreset && !item.broken)
+        ? '已找到逐步骤只读审查 preset。' : '目录中未找到可用的 step-review-reader，请重新加载服务端插件。')
+    }).catch(() => { if (active) setPresetMessage('preset 目录读取失败，审查仅使用 step-review-reader。') })
     return () => { active = false }
   }, [ctx, catalogVersion])
   if (remote.status !== 'ready' || !draft) return <p>正在等待逐步骤审查配置；请确认服务端插件已启用。</p>
@@ -94,20 +98,22 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<SettingsFor
   const error = validation(draft, issues) || (schemaError ? '配置校验失败：' + schemaError : '')
   const conflict = dirty && revision !== remote.revision
   const reload = () => { if (remote.value) { setDraft(formValue(remote.value)); setRevision(remote.revision); setDirty(false); resetKeys(); setResetRules(false); setMessage('已载入当前配置。') } }
-  const save = async () => {
-    if (error || conflict || revision === undefined || !schema || !remote.value) return
+  const save = async (disableReview = false) => {
+    if (!remote.writable || saving || conflict || revision === undefined || !remote.value) return
+    if (!disableReview && (error || !schema)) return
     setSaving(true); setMessage('正在保存…')
     try {
       const baseline = formValue(remote.value)
-      const changed = Object.entries(draft).filter(([key, value]) => Object.hasOwn(defaults, key)
+      // 关闭只写启用状态，坏规则、preset 和其他草稿不参与本次保存。
+      const changed = disableReview ? [['enabled', false] as const] : Object.entries(draft).filter(([key, value]) => Object.hasOwn(defaults, key)
         && JSON.stringify(value) !== JSON.stringify(baseline[key as keyof StepReviewSettings]))
-      const unsupported = changed.find(([key]) => !ctx.settingsSchema.nodeAtPath(schema, [key]))
+      const unsupported = !disableReview && changed.find(([key]) => !ctx.settingsSchema.nodeAtPath(schema!, [key]))
       if (unsupported) { setMessage('当前服务端尚未支持此设置，请先通过插件管理器加载新版插件后再保存。'); return }
       if (!changed.length) { setDirty(false); setMessage('配置未发生变化。'); return }
       const ops = changed
         .map(([key, value]) => ({ op: 'set' as const, path: [key], value: Array.isArray(value) ? value.map(rule => ({ ...rule })) : value }))
       const accepted = await scope.mutate(ops, revision)
-      if (accepted) { setDirty(false); setMessage('已保存，后续主模型请求使用新配置。') }
+      if (accepted) { setDirty(false); setMessage(disableReview ? '已关闭审查；其他草稿未保存。' : '已保存，后续主模型请求使用新配置。') }
       else setMessage('保存未接受，请检查配置或重新载入后再编辑。')
     } catch (error) { setMessage('保存失败：' + (error instanceof Error ? error.message : String(error))) }
     finally { setSaving(false) }
@@ -125,12 +131,15 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<SettingsFor
     <section className={css.section} aria-label='基本设置'>
       <h3>基本设置</h3>
       <div className={css.switchRow}><div className={css.switchText}><span>启用审查</span><p className={css.hint}>通过后发布回复并执行工具。</p></div>
-        <Switch checked={draft.enabled} disabled={disabled} label='启用审查' onChange={enabled => edit({ enabled })} /></div>
+        <Switch checked={draft.enabled} disabled={disabled || conflict} label='启用审查' onChange={enabled => { if (enabled) edit({ enabled }); else void save(true) }} /></div>
+      <p className={css.hint}>关闭开关会立即保存关闭状态，其他草稿不保存。</p>
       <label className={css.field}><span>审查 Agent preset id</span>
-        <Input className={css.input} disabled={disabled} value={draft.reviewerPreset ?? defaults.reviewerPreset} list='step-review-presets'
-          placeholder='例如 step-review-reader' onChange={event => edit({ reviewerPreset: event.target.value })} />
-        <datalist id='step-review-presets'>{presets?.presets.filter(item => !item.broken).map(item => <option key={item.id} value={item.id}>{item.name || item.id}</option>)}</datalist>
-        <span className={css.hint}>{presetMessage} 默认 step-review-reader 只读取证；preset 仅决定工具与权限，审查模型在下方单独配置。</span>
+        <select className={css.input} disabled={disabled} value={draft.reviewerPreset === defaults.reviewerPreset ? defaults.reviewerPreset : ''}
+          onChange={event => edit({ reviewerPreset: event.target.value })}>
+          <option value='' disabled>选择只读审查 preset</option>
+          <option value={defaults.reviewerPreset}>step-review-reader</option>
+        </select>
+        <span className={css.hint}>{presetMessage} step-review-reader 只读取证；preset 仅决定工具与权限，审查模型在下方单独配置。</span>
       </label>
       <RouteEditor {...modelProps} provider={draft.provider} model={draft.model} reasoningEffort={draft.reasoningEffort}
         onChange={(provider, model, reasoningEffort) => edit({ provider, model, reasoningEffort })} />
@@ -147,7 +156,7 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<SettingsFor
         <Button size='sm' variant='outline' disabled={disabled} onClick={() => { resetKeys(); edit({ rules: structuredClone(defaults.rules) }); setResetRules(false) }}>确认载入</Button></>
         : <Button size='sm' disabled={disabled} onClick={() => setResetRules(true)}>载入默认规则</Button>}</div>
     </section>
-    <section className={css.section} aria-label='高级设置'>
+    <section className={css.section}>
       <SettingsDisclosure title='高级设置'>
         <div className={css.columns}>
           <label className={css.field}><span>审查超时（毫秒）</span><Input className={css.input} disabled={disabled} type='number' min={1} max={maxTimeoutMs} step={1} value={draft.timeoutMs} onChange={event => edit({ timeoutMs: event.target.valueAsNumber })} /></label>
@@ -157,6 +166,7 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<SettingsFor
         </div>
         <p className={css.hint}>审查使用独立容量池，默认最多并发 16 个，与工作 Agent 分开计数。保存后后续接纳使用新容量；已运行的审查继续占用名额直至结束。</p>
         <p className={css.hint}>审查输出沿用所选模型的原生设置，材料与取证结果按原生工具行为提供。</p>
+        <div className={css.switchRow}><div className={css.switchText}><span>取证文件变化时中止</span><p className={css.hint}>默认关闭，按审查时读取的证据继续。开启后，放行前复核文件版本，变化或消失时停止本次响应。</p></div><Switch checked={draft.stopOnEvidenceChange ?? defaults.stopOnEvidenceChange} disabled={disabled} label='取证文件变化时中止' onChange={stopOnEvidenceChange => edit({ stopOnEvidenceChange })} /></div>
         <div className={css.switchRow}><div className={css.switchText}><span>提供最近一条用户请求</span><p className={css.hint}>向审查器补充本次任务的上下文。</p></div><Switch checked={draft.includeUserRequest} disabled={disabled} label='提供最近一条用户请求' onChange={includeUserRequest => edit({ includeUserRequest })} /></div>
       </SettingsDisclosure>
     </section>
@@ -170,8 +180,25 @@ function Editor({ ctx, scope, t }: { ctx: Context; scope: ConfigForm<SettingsFor
   </form>
 }
 export function apply(ctx: Context): void {
+  registerReviewCatalog(ctx)
+  registerCatalogSidebar(ctx)
   ctx.effect(() => ctx.uiConversation.events.register(reviewDefinition))
-  ctx.slots.inject('conversation.chat.node', () => ctx.slots.register({ name: 'conversation.chat.node', key: 'step-review', locale: 'conversation' }, ReviewNode))
+  const selected = createSnapshotStore<{ parentSessionId: SessionId; target: ReviewSessionTarget } | null>(null)
+  function ReviewOverlay({ t }: PropsLocale<'conversation'>) {
+    const selection = useSyncExternalStore(selected.subscribe, selected.getSnapshot)
+    return selection && <ReviewSessionDialog {...selection} t={t} close={() => selected.set(null)} />
+  }
+  ctx.slots.inject('shell.overlay', () => ctx.slots.register({ name: 'shell.overlay', id: 'step-review.session', locale: 'conversation' }, ReviewOverlay))
+  ctx.slots.inject('conversation.chat.node', () => ctx.slots.register({
+    name: 'conversation.chat.node', key: 'step-review', locale: 'conversation',
+    inject: (parentSessionId: SessionId) => ({
+      openReview: (target: ReviewSessionTarget) => {
+        if ('id' in target && !target.id.startsWith('step-review-detail-')) ctx.uiWorkspace.openSession(target.id as SessionId)
+        else selected.set({ parentSessionId: 'id' in target && target.originSessionId
+          ? target.originSessionId as SessionId : parentSessionId, target })
+      },
+    }),
+  }, ReviewNode))
   const scope = ctx.configForms.get<SettingsFormValue>('step-review')
   const render = ({ t }: PropsLocale<'model'>) => <Editor ctx={ctx} scope={scope} t={t} />
   ctx.slots.inject('plugins.bundle.config', () => ctx.slots.register({ name: 'plugins.bundle.config', key: 'dsh-step-review', locale: 'model' }, render))

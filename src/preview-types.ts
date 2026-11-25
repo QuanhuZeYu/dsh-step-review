@@ -11,6 +11,13 @@ export interface PreviewPart {
   /** block-end 用完整值替换累计增量。 */
   replace?: boolean
 }
+export interface PreviewTiming {
+  startedAt: number
+  firstTokenAt?: number
+  finishedAt?: number
+  releasedAt?: number
+  outputTokens?: number
+}
 export interface PreviewRecord {
   version: 1
   previewId: string
@@ -22,6 +29,9 @@ export interface PreviewRecord {
   snapshot?: PreviewPart[]
   candidate?: Candidate
   ruleId?: string
+  reviewerSessionId?: string
+  parentSessionId?: string
+  timing?: PreviewTiming
 }
 declare module '@deepseek-ai/dsh-session/types' {
   interface PluginRecordMap { 'plugin:step-review/preview': PreviewRecord }

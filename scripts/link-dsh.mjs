@@ -18,7 +18,7 @@ for (const parent of ['vendor', ...groups]) {
     map.set(manifest.name, path)
   }
 }
-for (const name of ['typescript', '@types/node', 'react', '@types/react', 'esbuild', 'yaml', 'react-dom', 'clsx']) {
+for (const name of ['typescript', '@types/node', 'react', '@types/react', 'esbuild', 'yaml', 'react-dom', 'clsx', 'zod']) {
   let source = join(checkout, 'node_modules', name)
   try { await stat(source) } catch (error) {
     if (error.code !== 'ENOENT') throw error

@@ -3,7 +3,6 @@ import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-agent'
 import type { PresetDefinition } from '@deepseek-ai/dsh-agent-preset-registry'
 import type {} from '@deepseek-ai/dsh-tools'
-import { scopeOf } from '@deepseek-ai/dsh-scope'
 import * as FileTools from '@deepseek-ai/dsh-tool-fs'
 import * as SearchTools from '@deepseek-ai/dsh-tool-fs-search'
 import * as NativeExecutor from '@deepseek-ai/dsh-tool-executor-native'
@@ -29,7 +28,9 @@ const executableTools = new Set([...readTools, 'structured_output'])
 
 /** 由 agent-preset 的 plugins 挂载，所有贡献随该 preset 代际释放。 */
 export async function apply(ctx: Context): Promise<void> {
-  if (scopeOf(ctx) === undefined) throw new Error('审查能力模块需要挂载在 Agent preset 作用域内')
+  // 由工具服务校验其实际作用域，避免热重载后的私有 Symbol 代际差异。
+  const release = ctx.tools.restrict({ allow: [] })
+  release()
 
   await ctx.plugin(FileTools, { read: true, readImage: false, write: false, edit: false, applyPatch: false })
   await ctx.plugin(SearchTools, { sampleOverCapGlobResults: false })
